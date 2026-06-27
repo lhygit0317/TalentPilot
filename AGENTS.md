@@ -98,7 +98,7 @@ Implemented command surface:
 - `make test`: run backend and frontend tests.
 - `make test-api`: run `go test ./...` in `apps/api`. Requires Go.
 - `make test-web`: run Vitest for `apps/web`. Requires pnpm dependencies.
-- `make test-e2e`: run the web Playwright command. Requires Playwright browser setup.
+- `make test-e2e`: reserved for future Playwright coverage; Playwright dependency/config is not installed yet and this command is not part of current passing gates.
 - `make lint`: run pnpm lint plus `go vet ./...`. Requires pnpm dependencies and Go.
 - `make typecheck`: run TypeScript type checks.
 - `make build`: build frontend packages and the Go API binary. Requires pnpm dependencies and Go.

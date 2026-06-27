@@ -23,7 +23,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 | Architecture Decisions | ADR set for foundation choices | Done | `docs/adr/0001` through `0006` exist. | Add ADRs for future durable decisions. |
 | Repository | Monorepo skeleton | Done | `apps/web`, `apps/api`, `packages/api-contract`, `packages/api-client`, `pnpm-workspace.yaml`, and `Makefile` exist. | Use foundation for next SPEC work. |
 | Frontend | React/Vite app | Done | `apps/web/package.json`, `apps/web/src/app/App.tsx`, Vite, Tailwind, and Dockerfile exist. | Extend through business SPECs. |
-| Frontend | Component rules enforced | Done | Component rule is documented in `AGENTS.md` and SPEC; `apps/web/src/components/ui/button.tsx` and `make lint` are present. | Add stricter lint coverage if business pages expand. |
+| Frontend | Component rules documented | In Progress | Component convention is documented in `AGENTS.md` and SPEC; `apps/web/src/components/ui/button.tsx` exists. No lint/check enforces raw interactive HTML yet. | Add stricter lint/check when business pages expand. |
 | Frontend | i18n foundation | Done | `apps/web/src/i18n/zh-CN.ts` and `apps/web/src/i18n/en-US.ts` exist. | Add feature messages with each business SPEC. |
 | Backend | Go/Echo API app | Done | `apps/api/cmd/api/main.go`, `internal/app/server.go`, and `/healthz` tests exist. | Extend through auth and IAM SPECs. |
 | Backend | GORM repositories | Done | `apps/api/internal/platform/db/db.go` provides SQLite/PostgreSQL GORM adapter. | Add domain repositories with business SPECs. |
