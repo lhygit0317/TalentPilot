@@ -1,0 +1,21 @@
+{
+  "name": "@talentpilot/api-client",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "generate": "openapi-typescript ../api-contract/openapi.json -o src/schema.d.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "latest"
+  },
+  "devDependencies": {
+    "openapi-typescript": "latest",
+    "typescript": "latest"
+  }
+}
