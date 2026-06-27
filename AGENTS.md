@@ -27,6 +27,7 @@ Agents must read this file before making changes. If project-wide consensus chan
 - Migration strategy: goose migrations are the schema source of truth. Do not rely on GORM AutoMigrate for production schema changes.
 - API contract strategy: backend code is the source of truth; Huma with the Echo adapter generates OpenAPI from backend route/DTO definitions; frontend TypeScript client is generated from OpenAPI.
 - OpenAPI generation library: Huma with Echo adapter.
+- Container ownership model: API image runs as non-root `talentpilot` uid/gid `10001`; web image uses `nginxinc/nginx-unprivileged`; Compose Postgres data ownership is managed by the official Postgres image and named volume.
 - Testing strategy: red-green-refactor TDD. No production behavior without a failing test first.
 - Frontend component rule: business pages must not use raw interactive HTML elements directly. Use shadcn/ui or project-wrapped components.
 - Error strategy: backend returns stable error codes, default Chinese messages, request IDs, and structured details; frontend translates display text through i18n.
@@ -101,7 +102,7 @@ Implemented command surface:
 - `make test-e2e`: reserved for future Playwright coverage; Playwright dependency/config is not installed yet and this command is not part of current passing gates.
 - `make lint`: run pnpm lint plus `go vet ./...`. Requires pnpm dependencies and Go.
 - `make typecheck`: run TypeScript type checks.
-- `make build`: build frontend packages and the Go API binary. Requires pnpm dependencies and Go.
+- `make build`: build frontend packages and the Go API binary at `apps/api/bin/api`. Requires pnpm dependencies and Go.
 - `make migrate-up`: run goose SQLite migrations for local development. Requires Go.
 - `make migrate-down`: roll back one goose SQLite migration for local development. Requires Go.
 - `make openapi-generate`: generate `packages/api-contract/openapi.json` from the Go API via Huma. Requires Go.
