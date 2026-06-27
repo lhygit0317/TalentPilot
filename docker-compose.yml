@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: talentpilot
+      POSTGRES_USER: talentpilot
+      POSTGRES_PASSWORD: talentpilot
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talentpilot -d talentpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      APP_ENV: development
+      API_ADDR: ":8080"
+      DATABASE_URL: "postgres://talentpilot:talentpilot@postgres:5432/talentpilot?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres-data:
