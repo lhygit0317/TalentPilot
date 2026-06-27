@@ -5,7 +5,7 @@ define require_package
 endef
 
 help:
-	@grep -E '^[a-zA-Z_-]+:' Makefile | cut -d: -f1 | sort
+	@grep -E '^[a-zA-Z0-9_-]+:' Makefile | cut -d: -f1 | sort
 
 setup:
 	corepack enable
