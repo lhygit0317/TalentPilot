@@ -23,7 +23,7 @@ Agents must read this file before making changes. If project-wide consensus chan
 - Runtime baseline: Node 24 LTS for frontend tooling; Go 1.26 for backend tooling.
 - Frontend stack: React, TypeScript, Vite, Tailwind CSS, shadcn/ui, Vercel AI SDK, lucide-react, and a React-compatible motion library.
 - Backend stack: Go, Echo, GORM, goose.
-- Database strategy: SQLite for local automated testing; PostgreSQL for production.
+- Database strategy: SQLite for default local automated testing; PostgreSQL for production and CI migration compatibility when `DATABASE_URL` is set.
 - Migration strategy: goose migrations are the schema source of truth. Do not rely on GORM AutoMigrate for production schema changes.
 - API contract strategy: backend code is the source of truth; Huma with the Echo adapter generates OpenAPI from backend route/DTO definitions; frontend TypeScript client is generated from OpenAPI.
 - OpenAPI generation library: Huma with Echo adapter.
@@ -97,7 +97,7 @@ Implemented command surface:
 - `make dev-web`: run the Vite web app.
 - `make dev-api`: run the Echo API with `go run`.
 - `make test`: run backend and frontend tests.
-- `make test-api`: run `go test ./...` in `apps/api`. Requires Go.
+- `make test-api`: run `go test ./...` in `apps/api`; migration tests also exercise PostgreSQL when `DATABASE_URL` is set. Requires Go.
 - `make test-web`: run Vitest for `apps/web`. Requires pnpm dependencies.
 - `make test-e2e`: reserved for future Playwright coverage; Playwright dependency/config is not installed yet and this command is not part of current passing gates.
 - `make lint`: run pnpm lint plus `go vet ./...`. Requires pnpm dependencies and Go.

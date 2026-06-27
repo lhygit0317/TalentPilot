@@ -12,4 +12,3 @@ apps/api/bin/
 apps/api/tmp/
 apps/api/*.db
 apps/api/*.db-*
-packages/api-client/src/schema.d.ts

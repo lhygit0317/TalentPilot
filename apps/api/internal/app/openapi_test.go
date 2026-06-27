@@ -39,3 +39,88 @@ func TestOpenAPIDocumentIncludesHealthEndpoint(t *testing.T) {
 		t.Fatalf("expected /healthz get operation to contain 200 response")
 	}
 }
+
+func TestOpenAPIDocumentUsesStableErrorEnvelope(t *testing.T) {
+	server := NewServer()
+
+	raw, err := json.Marshal(server.API.OpenAPI())
+	if err != nil {
+		t.Fatalf("marshal openapi: %v", err)
+	}
+
+	var doc struct {
+		Components struct {
+			Schemas map[string]struct {
+				Type       string                     `json:"type"`
+				Properties map[string]json.RawMessage `json:"properties"`
+			} `json:"schemas"`
+		} `json:"components"`
+		Paths map[string]map[string]struct {
+			Responses map[string]struct {
+				Content map[string]struct {
+					Schema struct {
+						Ref string `json:"$ref"`
+					} `json:"schema"`
+				} `json:"content"`
+			} `json:"responses"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatalf("unmarshal openapi: %v", err)
+	}
+
+	if _, ok := doc.Components.Schemas["ErrorModel"]; ok {
+		t.Fatalf("expected OpenAPI document not to expose Huma ErrorModel")
+	}
+
+	foundStableEnvelope := false
+	for name, schema := range doc.Components.Schemas {
+		props := schema.Properties
+		if schemaPropertyHasType(t, props["code"], "string") &&
+			schemaPropertyHasType(t, props["message"], "string") &&
+			schemaPropertyHasType(t, props["requestId"], "string") &&
+			schemaPropertyHasType(t, props["details"], "object") {
+			foundStableEnvelope = true
+			if name == "" {
+				t.Fatalf("stable error envelope schema name must not be empty")
+			}
+		}
+	}
+	if !foundStableEnvelope {
+		t.Fatalf("expected OpenAPI components to include stable error envelope properties")
+	}
+
+	defaultResponse := doc.Paths["/healthz"]["get"].Responses["default"]
+	if _, ok := defaultResponse.Content["application/json"]; !ok {
+		t.Fatalf("expected default error response to use application/json content")
+	}
+	if _, ok := defaultResponse.Content["application/problem+json"]; ok {
+		t.Fatalf("expected default error response not to use Huma problem+json content")
+	}
+}
+
+func schemaPropertyHasType(t *testing.T, raw json.RawMessage, expected string) bool {
+	t.Helper()
+	if len(raw) == 0 {
+		return false
+	}
+
+	var property struct {
+		Type any `json:"type"`
+	}
+	if err := json.Unmarshal(raw, &property); err != nil {
+		t.Fatalf("unmarshal schema property: %v", err)
+	}
+
+	switch actual := property.Type.(type) {
+	case string:
+		return actual == expected
+	case []any:
+		for _, item := range actual {
+			if value, ok := item.(string); ok && value == expected {
+				return true
+			}
+		}
+	}
+	return false
+}

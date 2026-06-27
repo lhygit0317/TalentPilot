@@ -8,6 +8,7 @@ import (
 	"slices"
 	"testing"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
 )
@@ -324,4 +325,150 @@ func TestMigrationProviderDoesNotRequireGlobalGooseDialect(t *testing.T) {
 	if _, err := provider.Up(context.Background()); err != nil {
 		t.Fatalf("provider up without global dialect: %v", err)
 	}
+}
+
+func TestFoundationMigrationsRunOnPostgresWhenConfigured(t *testing.T) {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		t.Skip("DATABASE_URL is not set")
+	}
+
+	ctx := context.Background()
+	database, err := sql.Open("pgx", dsn)
+	if err != nil {
+		t.Fatalf("open postgres: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close postgres: %v", err)
+		}
+	})
+
+	resetPostgresSchema(t, database)
+	t.Cleanup(func() {
+		resetPostgresSchema(t, database)
+	})
+
+	provider := newPostgresMigrationProvider(t, database)
+	if _, err := provider.Up(ctx); err != nil {
+		t.Fatalf("postgres goose up: %v", err)
+	}
+
+	assertPostgresFoundationTablesExist(t, database)
+	assertPostgresSystemDepartmentSeeded(t, database)
+
+	if _, err := provider.Down(ctx); err != nil {
+		t.Fatalf("postgres goose down: %v", err)
+	}
+	assertPostgresFoundationTablesDropped(t, database)
+}
+
+func newPostgresMigrationProvider(t *testing.T, database *sql.DB) *goose.Provider {
+	t.Helper()
+
+	migrationDir := filepath.Join("..", "..", "migrations")
+	provider, err := goose.NewProvider(goose.DialectPostgres, database, os.DirFS(migrationDir))
+	if err != nil {
+		t.Fatalf("new postgres migration provider: %v", err)
+	}
+	return provider
+}
+
+func resetPostgresSchema(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	if _, err := database.Exec("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public"); err != nil {
+		t.Fatalf("reset postgres schema: %v", err)
+	}
+}
+
+func assertPostgresFoundationTablesExist(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	expected := []string{
+		"audit_logs",
+		"department_positions",
+		"department_resumes",
+		"departments",
+		"jobs",
+		"notifications",
+		"permissions",
+		"position_resumes",
+		"positions",
+		"resumes",
+		"role_relations",
+		"roles",
+		"user_department_roles",
+		"users",
+	}
+
+	if names := postgresFoundationTableNames(t, database); !slices.Equal(names, expected) {
+		t.Fatalf("expected postgres foundation tables %v, got %v", expected, names)
+	}
+}
+
+func assertPostgresSystemDepartmentSeeded(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	var name string
+	err := database.QueryRow("SELECT name FROM departments WHERE id = $1", "__system__").Scan(&name)
+	if err != nil {
+		t.Fatalf("query postgres system department seed: %v", err)
+	}
+	if name != "system" {
+		t.Fatalf("expected postgres system department name, got %q", name)
+	}
+}
+
+func assertPostgresFoundationTablesDropped(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	if names := postgresFoundationTableNames(t, database); len(names) != 0 {
+		t.Fatalf("expected postgres foundation tables to be dropped, got %v", names)
+	}
+}
+
+func postgresFoundationTableNames(t *testing.T, database *sql.DB) []string {
+	t.Helper()
+
+	rows, err := database.Query(`
+		SELECT table_name
+		FROM information_schema.tables
+		WHERE table_schema = 'public'
+			AND table_type = 'BASE TABLE'
+			AND table_name IN (
+				'audit_logs',
+				'department_positions',
+				'department_resumes',
+				'departments',
+				'jobs',
+				'notifications',
+				'permissions',
+				'position_resumes',
+				'positions',
+				'resumes',
+				'role_relations',
+				'roles',
+				'user_department_roles',
+				'users'
+			)
+		ORDER BY table_name
+	`)
+	if err != nil {
+		t.Fatalf("query postgres foundation tables: %v", err)
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatalf("scan postgres table: %v", err)
+		}
+		names = append(names, name)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate postgres tables: %v", err)
+	}
+	return names
 }

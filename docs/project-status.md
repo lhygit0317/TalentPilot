@@ -27,13 +27,13 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 | Frontend | i18n foundation | Done | `apps/web/src/i18n/zh-CN.ts` and `apps/web/src/i18n/en-US.ts` exist. | Add feature messages with each business SPEC. |
 | Backend | Go/Echo API app | Done | `apps/api/cmd/api/main.go`, `internal/app/server.go`, and `/healthz` tests exist. | Extend through auth and IAM SPECs. |
 | Backend | GORM DB adapter | Done | `apps/api/internal/platform/db/db.go` provides SQLite/PostgreSQL GORM adapter. | Add domain repositories with business SPECs. |
-| Backend | goose migrations | Done | `apps/api/migrations/000001_create_foundation_tables.sql` and migration integration test exist. | Add migrations per schema change. |
+| Backend | goose migrations | Done | `apps/api/migrations/000001_create_foundation_tables.sql` and SQLite/PostgreSQL migration integration tests exist. | Add migrations per schema change. |
 | API Contract | Backend-generated OpenAPI | Done | Huma/Echo OpenAPI generation in `apps/api/cmd/openapi`; `make openapi-check` verifies drift. | Keep generated contract current. |
 | API Contract | Generated frontend client | Done | `packages/api-client/src/schema.d.ts`, `src/index.ts`, and `make client-check` exist. | Regenerate after API changes. |
 | Testing | TDD rules documented | Done | `AGENTS.md`, foundation SPEC, ADR 0005 | Enforce in implementation workflow. |
-| Testing | Backend tests | Done | Go unit and migration integration tests exist under `apps/api`; `make test-api` runs them. | Add failing tests before new behavior. |
+| Testing | Backend tests | Done | Go unit tests plus SQLite and `DATABASE_URL`-gated PostgreSQL migration integration tests exist under `apps/api`; `make test-api` runs them. | Add failing tests before new behavior. |
 | Testing | Frontend tests | Done | Vitest and Testing Library setup exist under `apps/web`; `make test-web` runs them. | Add MSW/Playwright coverage when workflows need it. |
-| CI | Quality gate workflow | Done | `.github/workflows/ci.yml` runs pnpm setup, Go setup, lint, typecheck, tests, OpenAPI/client drift checks, and build. | Keep CI aligned with Makefile. |
+| CI | Quality gate workflow | Done | `.github/workflows/ci.yml` runs pnpm setup, Go setup, PostgreSQL service-backed tests, lint, typecheck, OpenAPI/client drift checks, and build. | Keep CI aligned with Makefile. |
 | Containers | Local compose stack | Done | `docker-compose.yml`, `apps/api/Dockerfile`, and `apps/web/Dockerfile` exist. | Keep image builds green as services grow. |
 
 ## Business Epic Checklist
