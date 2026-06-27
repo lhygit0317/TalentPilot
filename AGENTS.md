@@ -2,13 +2,13 @@
 
 ## Read This First
 
-This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is foundation design: repository structure, frontend/backend separation, engineering practices, testing discipline, API contracts, database strategy, and Agent-friendly project memory.
+This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is foundation implemented / ready for next SPEC planning.
 
 Agents must read this file before making changes. If project-wide consensus changes, update this file in the same change set.
 
 ## Current Project Phase
 
-- Phase: Foundation architecture and SPEC creation.
+- Phase: Foundation implemented / ready for next SPEC planning.
 - Current source of truth: [docs/specs/000-foundation-architecture.md](docs/specs/000-foundation-architecture.md).
 - Current status checklist: [docs/project-status.md](docs/project-status.md).
 - PRD scope: W3 login, IAM, resume parsing, recommendation, resume library, department/position management, user/role management, notifications, custom role management.
@@ -19,11 +19,14 @@ Agents must read this file before making changes. If project-wide consensus chan
 - Frontend app: `apps/web`.
 - Backend app: `apps/api`.
 - Shared/generated packages: `packages/*`.
+- JavaScript package manager: pnpm.
+- Runtime baseline: Node 24 LTS for frontend tooling; Go 1.26 for backend tooling.
 - Frontend stack: React, TypeScript, Vite, Tailwind CSS, shadcn/ui, Vercel AI SDK, lucide-react, and a React-compatible motion library.
 - Backend stack: Go, Echo, GORM, goose.
 - Database strategy: SQLite for local automated testing; PostgreSQL for production.
 - Migration strategy: goose migrations are the schema source of truth. Do not rely on GORM AutoMigrate for production schema changes.
-- API contract strategy: backend code is the source of truth; backend route/DTO annotations generate OpenAPI; frontend TypeScript client is generated from OpenAPI.
+- API contract strategy: backend code is the source of truth; Huma with the Echo adapter generates OpenAPI from backend route/DTO definitions; frontend TypeScript client is generated from OpenAPI.
+- OpenAPI generation library: Huma with Echo adapter.
 - Testing strategy: red-green-refactor TDD. No production behavior without a failing test first.
 - Frontend component rule: business pages must not use raw interactive HTML elements directly. Use shadcn/ui or project-wrapped components.
 - Error strategy: backend returns stable error codes, default Chinese messages, request IDs, and structured details; frontend translates display text through i18n.
@@ -86,26 +89,28 @@ This file should contain stable rules and indexes only. Put detailed designs in 
 
 ## Commands Index
 
-Commands are not implemented yet. Planned command surface:
+Implemented command surface:
 
-- `make setup`
-- `make dev`
-- `make dev-web`
-- `make dev-api`
-- `make test`
-- `make test-api`
-- `make test-web`
-- `make test-e2e`
-- `make lint`
-- `make typecheck`
-- `make migrate-up`
-- `make migrate-down`
-- `make openapi-generate`
-- `make openapi-check`
-- `make client-generate`
-- `make ci`
-
-When these commands become available, update this section with exact behavior and prerequisites.
+- `make setup`: enable Corepack, install pnpm dependencies, and download Go modules. Requires Node/Corepack, pnpm, and Go.
+- `make dev`: run workspace development services through pnpm.
+- `make dev-web`: run the Vite web app.
+- `make dev-api`: run the Echo API with `go run`.
+- `make test`: run backend and frontend tests.
+- `make test-api`: run `go test ./...` in `apps/api`. Requires Go.
+- `make test-web`: run Vitest for `apps/web`. Requires pnpm dependencies.
+- `make test-e2e`: run the web Playwright command. Requires Playwright browser setup.
+- `make lint`: run pnpm lint plus `go vet ./...`. Requires pnpm dependencies and Go.
+- `make typecheck`: run TypeScript type checks.
+- `make build`: build frontend packages and the Go API binary. Requires pnpm dependencies and Go.
+- `make migrate-up`: run goose SQLite migrations for local development. Requires Go.
+- `make migrate-down`: roll back one goose SQLite migration for local development. Requires Go.
+- `make openapi-generate`: generate `packages/api-contract/openapi.json` from the Go API via Huma. Requires Go.
+- `make openapi-check`: regenerate OpenAPI and fail on committed contract drift. Requires Go and a clean expected contract.
+- `make client-generate`: generate the TypeScript API client from OpenAPI.
+- `make client-check`: regenerate the TypeScript API client and fail on committed client drift.
+- `make ci`: run lint, typecheck, tests, OpenAPI drift check, client drift check, and builds. Requires pnpm dependencies and Go.
+- `docker compose config`: validate local compose configuration. Requires Docker Compose.
+- `docker compose build`: build local API and web images. Requires Docker.
 
 ## Documentation Index
 
@@ -118,3 +123,4 @@ When these commands become available, update this section with exact behavior an
   - [docs/adr/0003-use-go-echo-gorm-goose.md](docs/adr/0003-use-go-echo-gorm-goose.md)
   - [docs/adr/0004-backend-code-generates-openapi.md](docs/adr/0004-backend-code-generates-openapi.md)
   - [docs/adr/0005-use-tdd-red-green-refactor.md](docs/adr/0005-use-tdd-red-green-refactor.md)
+  - [docs/adr/0006-use-huma-for-openapi-generation.md](docs/adr/0006-use-huma-for-openapi-generation.md)

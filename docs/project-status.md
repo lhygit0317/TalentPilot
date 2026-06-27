@@ -20,21 +20,21 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 | Architecture | Foundation SPEC | Done | `docs/specs/000-foundation-architecture.md` reviewed and approved. | Use as implementation planning input. |
 | Agent Infrastructure | Main Agent memory | Done | `AGENTS.md` | Keep updated when project-wide consensus changes. |
 | Agent Infrastructure | Live project checklist | Done | `docs/project-status.md` | Update after each design or implementation milestone. |
-| Architecture Decisions | ADR set for foundation choices | Done | `docs/adr/0001` through `0005` reviewed and approved. | Add ADRs for future durable decisions. |
-| Repository | Monorepo skeleton | Not Started | No `apps/` or `packages/` code yet. | Create foundation scaffold after implementation plan approval. |
-| Frontend | React/Vite app | Not Started | No `apps/web`. | Scaffold with TypeScript, Vite, Tailwind, shadcn/ui. |
-| Frontend | Component rules enforced | Not Started | No ESLint/checks yet. | Add lint/review rule against raw interactive HTML in business pages. |
-| Frontend | i18n foundation | Not Started | No `apps/web/src/i18n`. | Add `zh-CN` first, `en-US` structure reserved. |
-| Backend | Go/Echo API app | Not Started | No `apps/api`. | Scaffold Echo app with config, middleware, health endpoint. |
-| Backend | GORM repositories | Not Started | No persistence layer. | Add DB adapter and repository pattern. |
-| Backend | goose migrations | Not Started | No migrations. | Add first schema migration set. |
-| API Contract | Backend-generated OpenAPI | Not Started | No generator configured. | Choose generator and add generate/check commands. |
-| API Contract | Generated frontend client | Not Started | No `packages/api-client`. | Generate TypeScript client from OpenAPI. |
+| Architecture Decisions | ADR set for foundation choices | Done | `docs/adr/0001` through `0006` exist. | Add ADRs for future durable decisions. |
+| Repository | Monorepo skeleton | Done | `apps/web`, `apps/api`, `packages/api-contract`, `packages/api-client`, `pnpm-workspace.yaml`, and `Makefile` exist. | Use foundation for next SPEC work. |
+| Frontend | React/Vite app | Done | `apps/web/package.json`, `apps/web/src/app/App.tsx`, Vite, Tailwind, and Dockerfile exist. | Extend through business SPECs. |
+| Frontend | Component rules enforced | Done | Component rule is documented in `AGENTS.md` and SPEC; `apps/web/src/components/ui/button.tsx` and `make lint` are present. | Add stricter lint coverage if business pages expand. |
+| Frontend | i18n foundation | Done | `apps/web/src/i18n/zh-CN.ts` and `apps/web/src/i18n/en-US.ts` exist. | Add feature messages with each business SPEC. |
+| Backend | Go/Echo API app | Done | `apps/api/cmd/api/main.go`, `internal/app/server.go`, and `/healthz` tests exist. | Extend through auth and IAM SPECs. |
+| Backend | GORM repositories | Done | `apps/api/internal/platform/db/db.go` provides SQLite/PostgreSQL GORM adapter. | Add domain repositories with business SPECs. |
+| Backend | goose migrations | Done | `apps/api/migrations/000001_create_foundation_tables.sql` and migration integration test exist. | Add migrations per schema change. |
+| API Contract | Backend-generated OpenAPI | Done | Huma/Echo OpenAPI generation in `apps/api/cmd/openapi`; `make openapi-check` verifies drift. | Keep generated contract current. |
+| API Contract | Generated frontend client | Done | `packages/api-client/src/schema.d.ts`, `src/index.ts`, and `make client-check` exist. | Regenerate after API changes. |
 | Testing | TDD rules documented | Done | `AGENTS.md`, foundation SPEC, ADR 0005 | Enforce in implementation workflow. |
-| Testing | Backend tests | Not Started | No backend code. | Add Go unit/integration test harness. |
-| Testing | Frontend tests | Not Started | No frontend code. | Add Vitest, RTL, MSW, Playwright. |
-| CI | Quality gate workflow | Not Started | No workflow implementation. | Add lint, tests, OpenAPI drift, builds, Docker check. |
-| Containers | Local compose stack | Not Started | No compose services implemented. | Add API, web, PostgreSQL; defer optional Redis/MinIO if needed. |
+| Testing | Backend tests | Done | Go unit and migration integration tests exist under `apps/api`; `make test-api` runs them. | Add failing tests before new behavior. |
+| Testing | Frontend tests | Done | Vitest and Testing Library setup exist under `apps/web`; `make test-web` runs them. | Add MSW/Playwright coverage when workflows need it. |
+| CI | Quality gate workflow | Done | `.github/workflows/ci.yml` runs pnpm setup, Go setup, lint, typecheck, tests, OpenAPI/client drift checks, and build. | Keep CI aligned with Makefile. |
+| Containers | Local compose stack | Done | `docker-compose.yml`, `apps/api/Dockerfile`, and `apps/web/Dockerfile` exist. | Keep image builds green as services grow. |
 
 ## Business Epic Checklist
 
@@ -51,7 +51,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 ## Current Recommended Order
 
-1. Create implementation plan for monorepo foundation.
-2. Scaffold `apps/web`, `apps/api`, `packages/api-contract`, and `packages/api-client`.
-3. Add first CI, test harnesses, and generated contract checks.
-4. Write `001-auth-session-w3.md` and `002-iam-permission-model.md`.
+1. Write `docs/specs/001-auth-session-w3.md`.
+2. Write `docs/specs/002-iam-permission-model.md`.
+3. Implement W3/session foundation after SPEC approval.
+4. Implement IAM permission model after SPEC approval.
