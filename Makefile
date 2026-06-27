@@ -56,7 +56,7 @@ build:
 	$(call require_package,packages/api-client/package.json)
 	$(call require_package,packages/api-contract/package.json)
 	pnpm build
-	cd apps/api && go build ./cmd/api
+	cd apps/api && mkdir -p bin && go build -o bin/api ./cmd/api
 
 migrate-up:
 	cd apps/api && go run github.com/pressly/goose/v3/cmd/goose sqlite3 "file:talentpilot_dev.db?_foreign_keys=on" up
