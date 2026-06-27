@@ -65,7 +65,7 @@ migrate-down:
 	cd apps/api && go run github.com/pressly/goose/v3/cmd/goose sqlite3 "file:talentpilot_dev.db?_foreign_keys=on" down
 
 openapi-generate:
-	cd apps/api && go run ./cmd/openapi > ../../packages/api-contract/openapi.json
+	out=$$(pwd)/packages/api-contract/openapi.json && tmp=$$(mktemp "$$out.tmp.XXXXXX") && trap 'rm -f "$$tmp"' EXIT && cd apps/api && go run ./cmd/openapi > "$$tmp" && mv "$$tmp" "$$out"
 
 openapi-check:
 	$(call require_package,packages/api-contract/package.json)
