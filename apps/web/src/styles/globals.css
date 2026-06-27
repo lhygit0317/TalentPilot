@@ -1,6 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-bg: oklch(10% 0.018 245);
+  --color-shell: oklch(13% 0.018 245);
+  --color-fg: oklch(93% 0.01 240);
+  --color-muted: oklch(66% 0.018 240);
+  --color-accent: oklch(73% 0.13 190);
+  --font-body:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
 
 :root {
   color-scheme: dark;
