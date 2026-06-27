@@ -70,8 +70,8 @@ jobs:
       - name: Check OpenAPI drift
         run: make openapi-check
 
-      - name: Generate API client
-        run: make client-generate
+      - name: Check API client drift
+        run: make client-check
 
       - name: Build
         run: make build

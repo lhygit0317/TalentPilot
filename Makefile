@@ -1,4 +1,4 @@
-.PHONY: help setup dev dev-web dev-api test test-api test-web test-e2e lint typecheck build migrate-up migrate-down openapi-generate openapi-check client-generate ci
+.PHONY: help setup dev dev-web dev-api test test-api test-web test-e2e lint typecheck build migrate-up migrate-down openapi-generate openapi-check client-generate client-check ci
 
 define require_package
 	@test -f "$(1)" || (echo "Missing required package manifest: $(1)" >&2; exit 1)
@@ -76,10 +76,15 @@ client-generate:
 	$(call require_package,packages/api-client/package.json)
 	pnpm --filter @talentpilot/api-client generate
 
+client-check:
+	$(call require_package,packages/api-client/package.json)
+	$(MAKE) client-generate
+	git diff --exit-code packages/api-client/src/schema.d.ts
+
 ci:
 	$(MAKE) lint
 	$(MAKE) typecheck
 	$(MAKE) test
 	$(MAKE) openapi-check
-	$(MAKE) client-generate
+	$(MAKE) client-check
 	$(MAKE) build
