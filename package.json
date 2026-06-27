@@ -1,0 +1,18 @@
+{
+  "name": "talentpilot",
+  "private": true,
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "test": "pnpm -r test",
+    "test:web": "pnpm --filter @talentpilot/web test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "build": "pnpm -r build",
+    "client:generate": "pnpm --filter @talentpilot/api-client generate",
+    "openapi:check": "pnpm --filter @talentpilot/api-contract check"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}
