@@ -40,7 +40,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 | Epic | Scope | Status | Foundation Dependency | Next SPEC |
 | --- | --- | --- | --- | --- |
-| E1 | Login and identity authentication | Not Started | API app, auth/session foundation, IAM basics | `001-auth-session-w3.md` |
+| E1 | Login and identity authentication | In Progress | `docs/specs/001-auth-session-w3.md` drafted for review. | Review and approve SPEC, then plan implementation. |
 | E2 | Resume parsing | Not Started | Resume library, positions, matching, jobs | `005-resume-parse-workspace.md` |
 | E3 | Resume recommendation and routing | Not Started | IAM, resumes, positions, notifications | `006-resume-recommendation-notification.md` |
 | E4 | Resume library | Not Started | IAM, DB schema, resume service | `003-resume-library-import.md` |
@@ -51,7 +51,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 ## Current Recommended Order
 
-1. Write `docs/specs/001-auth-session-w3.md`.
+1. Review and approve `docs/specs/001-auth-session-w3.md`.
 2. Write `docs/specs/002-iam-permission-model.md`.
 3. Implement W3/session foundation after SPEC approval.
 4. Implement IAM permission model after SPEC approval.
