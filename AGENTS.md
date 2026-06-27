@@ -92,7 +92,7 @@ This file should contain stable rules and indexes only. Put detailed designs in 
 
 Implemented command surface:
 
-- `make setup`: enable Corepack, install pnpm dependencies, and download Go modules. Requires Node/Corepack, pnpm, and Go.
+- `make setup`: enable Corepack, install pnpm dependencies, and download Go modules. Requires Node/Corepack and Go; Corepack provides pnpm.
 - `make dev`: run workspace development services through pnpm.
 - `make dev-web`: run the Vite web app.
 - `make dev-api`: run the Echo API with `go run`.
