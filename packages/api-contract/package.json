@@ -1,0 +1,9 @@
+{
+  "name": "@talentpilot/api-contract",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "cd ../../apps/api && go run ./cmd/openapi > ../../packages/api-contract/openapi.json",
+    "check": "pnpm generate && git diff --exit-code openapi.json"
+  }
+}
