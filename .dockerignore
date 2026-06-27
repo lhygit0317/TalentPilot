@@ -3,6 +3,8 @@ node_modules
 dist
 coverage
 .env
+.env.*
+.worktrees/
 *.log
 apps/api/tmp
 apps/api/*.db
