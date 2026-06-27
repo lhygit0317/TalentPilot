@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: talentpilot_test
+          POSTGRES_USER: talentpilot
+          POSTGRES_PASSWORD: talentpilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U talentpilot -d talentpilot_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://talentpilot:talentpilot@localhost:5432/talentpilot_test?sslmode=disable
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download Go modules
+        run: go mod download
+        working-directory: apps/api
+
+      - name: Lint
+        run: make lint
+
+      - name: Typecheck
+        run: make typecheck
+
+      - name: Test
+        run: make test
+
+      - name: Check OpenAPI drift
+        run: make openapi-check
+
+      - name: Generate API client
+        run: make client-generate
+
+      - name: Build
+        run: make build
