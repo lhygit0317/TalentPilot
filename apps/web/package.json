@@ -22,10 +22,10 @@
     "vite": "latest"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "latest",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
     "@testing-library/user-event": "latest",
-    "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
@@ -36,6 +36,7 @@
     "postcss": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",
+    "typescript-eslint": "^8.62.0",
     "vitest": "latest"
   }
 }
