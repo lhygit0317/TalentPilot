@@ -3,14 +3,14 @@
   "private": true,
   "packageManager": "pnpm@10.13.1",
   "scripts": {
-    "dev": "test -f apps/web/package.json || (echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1); pnpm -r --parallel dev",
-    "test": "test -f apps/web/package.json || (echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1); pnpm -r test",
-    "test:web": "test -f apps/web/package.json || (echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1); pnpm --filter @talentpilot/web test",
-    "typecheck": "test -f apps/web/package.json || (echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1); test -f packages/api-client/package.json || (echo 'Missing required package manifest: packages/api-client/package.json' >&2; exit 1); test -f packages/api-contract/package.json || (echo 'Missing required package manifest: packages/api-contract/package.json' >&2; exit 1); pnpm -r typecheck",
-    "lint": "test -f apps/web/package.json || (echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1); pnpm -r lint",
-    "build": "test -f apps/web/package.json || (echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1); pnpm -r build",
-    "client:generate": "test -f packages/api-client/package.json || (echo 'Missing required package manifest: packages/api-client/package.json' >&2; exit 1); pnpm --filter @talentpilot/api-client generate",
-    "openapi:check": "test -f packages/api-contract/package.json || (echo 'Missing required package manifest: packages/api-contract/package.json' >&2; exit 1); pnpm --filter @talentpilot/api-contract check"
+    "dev": "test -f apps/web/package.json || { echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1; }; pnpm -r --parallel dev",
+    "test": "test -f apps/web/package.json || { echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1; }; pnpm -r test",
+    "test:web": "test -f apps/web/package.json || { echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1; }; pnpm --filter @talentpilot/web test",
+    "typecheck": "test -f apps/web/package.json || { echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1; }; test -f packages/api-client/package.json || { echo 'Missing required package manifest: packages/api-client/package.json' >&2; exit 1; }; test -f packages/api-contract/package.json || { echo 'Missing required package manifest: packages/api-contract/package.json' >&2; exit 1; }; pnpm -r typecheck",
+    "lint": "test -f apps/web/package.json || { echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1; }; pnpm -r lint",
+    "build": "test -f apps/web/package.json || { echo 'Missing required package manifest: apps/web/package.json' >&2; exit 1; }; pnpm -r build",
+    "client:generate": "test -f packages/api-client/package.json || { echo 'Missing required package manifest: packages/api-client/package.json' >&2; exit 1; }; pnpm --filter @talentpilot/api-client generate",
+    "openapi:check": "test -f packages/api-contract/package.json || { echo 'Missing required package manifest: packages/api-contract/package.json' >&2; exit 1; }; pnpm --filter @talentpilot/api-contract check"
   },
   "devDependencies": {
     "typescript": "latest"
