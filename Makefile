@@ -40,6 +40,8 @@ test-e2e:
 
 lint:
 	$(call require_package,apps/web/package.json)
+	$(call require_package,packages/api-client/package.json)
+	$(call require_package,packages/api-contract/package.json)
 	pnpm lint
 	cd apps/api && go vet ./...
 
@@ -51,6 +53,8 @@ typecheck:
 
 build:
 	$(call require_package,apps/web/package.json)
+	$(call require_package,packages/api-client/package.json)
+	$(call require_package,packages/api-contract/package.json)
 	pnpm build
 	cd apps/api && go build ./cmd/api
 
