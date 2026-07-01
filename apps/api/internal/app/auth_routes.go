@@ -57,9 +57,9 @@ type noContentOutput struct {
 
 type authResponse struct {
 	User         auth.UserSummary   `json:"user"`
-	RoleBindings []auth.RoleBinding `json:"roleBindings"`
-	RoleLabels   []string           `json:"roleLabels"`
-	PageAccess   []string           `json:"pageAccess"`
+	RoleBindings []auth.RoleBinding `json:"roleBindings" nullable:"false"`
+	RoleLabels   []string           `json:"roleLabels" nullable:"false"`
+	PageAccess   []string           `json:"pageAccess" nullable:"false"`
 	DefaultRoute string             `json:"defaultRoute"`
 }
 
