@@ -35,8 +35,31 @@ func TestLoginCreatesUserGuestBindingAndSession(t *testing.T) {
 	if store.upserted.ID != "w3_1" || !store.createdGuestBinding {
 		t.Fatalf("expected user upsert with guest binding, got upserted=%#v guest=%v", store.upserted, store.createdGuestBinding)
 	}
+	if store.createdSession.UserID != "w3_1" || store.createdSession.TokenHash != HashToken("auth_raw") || store.createdSession.CSRFTokenHash != HashToken("csrf_raw") {
+		t.Fatalf("expected hashed session creation, got %#v", store.createdSession)
+	}
+	if !store.createdSession.ExpiresAt.Equal(fixedNow().Add(12 * time.Hour)) {
+		t.Fatalf("expected 12h session expiry, got %s", store.createdSession.ExpiresAt)
+	}
 	if len(store.revokedForUser) != 1 || store.revokedForUser[0] != "w3_1" {
 		t.Fatalf("expected old sessions revoked for w3_1, got %v", store.revokedForUser)
+	}
+	if store.keepSessionID != "session_fake" {
+		t.Fatalf("expected new session retained while revoking others, got %q", store.keepSessionID)
+	}
+}
+
+func TestLoginUsesAtomicSessionRotation(t *testing.T) {
+	store := newFakeStore()
+	store.rejectSeparateSessionOps = true
+	w3 := &fakeW3{identity: W3Identity{ID: "w3_atomic", Name: "孙八", EmployeeID: "F001"}}
+	service := NewService(ServiceConfig{W3: w3, Store: store, TokenSource: fixedTokenSource("auth_atomic", "csrf_atomic"), Now: fixedNow})
+
+	if _, err := service.Login(context.Background(), LoginInput{Account: "sunba", Password: "secret"}); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	if !store.rotateCalled {
+		t.Fatalf("expected login to use atomic session rotation")
 	}
 }
 
@@ -94,10 +117,14 @@ func (f *fakeW3) Authenticate(ctx context.Context, input W3Credentials) (W3Ident
 }
 
 type fakeStore struct {
-	upsertCalled        bool
-	upserted            W3Identity
-	createdGuestBinding bool
-	revokedForUser      []string
+	upsertCalled             bool
+	upserted                 W3Identity
+	createdGuestBinding      bool
+	createdSession           CreateSessionInput
+	keepSessionID            string
+	rotateCalled             bool
+	rejectSeparateSessionOps bool
+	revokedForUser           []string
 }
 
 func newFakeStore() *fakeStore {
@@ -111,7 +138,35 @@ func (s *fakeStore) UpsertUserWithGuestBinding(ctx context.Context, identity W3I
 	return UserSummary{ID: identity.ID, Name: identity.Name, EmployeeID: identity.EmployeeID}, []RoleBinding{{RoleLabel: "游客", DepartmentID: "__system__", DepartmentName: "system"}}, nil
 }
 
+func (s *fakeStore) CreateSession(ctx context.Context, input CreateSessionInput) (SessionSummary, error) {
+	if s.rejectSeparateSessionOps {
+		return SessionSummary{}, errors.New("separate session creation is not atomic")
+	}
+	s.createdSession = input
+	return SessionSummary{ID: "session_fake", TokenHash: input.TokenHash, CSRFTokenHash: input.CSRFTokenHash, ExpiresAt: input.ExpiresAt}, nil
+}
+
+func (s *fakeStore) RotateSession(ctx context.Context, input CreateSessionInput) (SessionSummary, error) {
+	s.rotateCalled = true
+	s.createdSession = input
+	s.keepSessionID = "session_fake"
+	s.revokedForUser = append(s.revokedForUser, input.UserID)
+	return SessionSummary{ID: "session_fake", TokenHash: input.TokenHash, CSRFTokenHash: input.CSRFTokenHash, ExpiresAt: input.ExpiresAt}, nil
+}
+
+func (s *fakeStore) FindSessionByTokenHash(ctx context.Context, tokenHash string, now time.Time) (SessionSummary, error) {
+	return SessionSummary{}, ErrUnauthenticated
+}
+
+func (s *fakeStore) RevokeSession(ctx context.Context, sessionID string, now time.Time) error {
+	return nil
+}
+
 func (s *fakeStore) RevokeOtherSessions(ctx context.Context, userID string, keepSessionID string, now time.Time) error {
+	if s.rejectSeparateSessionOps {
+		return errors.New("separate session revocation is not atomic")
+	}
 	s.revokedForUser = append(s.revokedForUser, userID)
+	s.keepSessionID = keepSessionID
 	return nil
 }

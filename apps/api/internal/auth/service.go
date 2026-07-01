@@ -55,7 +55,14 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (LoginResult, err
 		return LoginResult{}, err
 	}
 
-	if err := s.store.RevokeOtherSessions(ctx, user.ID, "", s.now()); err != nil {
+	now := s.now()
+	if _, err := s.store.RotateSession(ctx, CreateSessionInput{
+		UserID:        user.ID,
+		TokenHash:     HashToken(authToken),
+		CSRFTokenHash: HashToken(csrfToken),
+		ExpiresAt:     now.Add(12 * time.Hour),
+		Now:           now,
+	}); err != nil {
 		return LoginResult{}, err
 	}
 

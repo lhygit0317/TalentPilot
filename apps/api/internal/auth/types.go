@@ -31,6 +31,10 @@ type W3Adapter interface {
 
 type Store interface {
 	UpsertUserWithGuestBinding(context.Context, W3Identity) (UserSummary, []RoleBinding, error)
+	CreateSession(context.Context, CreateSessionInput) (SessionSummary, error)
+	RotateSession(context.Context, CreateSessionInput) (SessionSummary, error)
+	FindSessionByTokenHash(context.Context, string, time.Time) (SessionSummary, error)
+	RevokeSession(context.Context, string, time.Time) error
 	RevokeOtherSessions(context.Context, string, string, time.Time) error
 }
 
@@ -62,3 +66,20 @@ type LoginResult struct {
 }
 
 type TokenSource func() (authToken string, csrfToken string, err error)
+
+type CreateSessionInput struct {
+	UserID        string
+	TokenHash     string
+	CSRFTokenHash string
+	ExpiresAt     time.Time
+	Now           time.Time
+}
+
+type SessionSummary struct {
+	ID            string
+	TokenHash     string
+	CSRFTokenHash string
+	User          UserSummary
+	RoleBindings  []RoleBinding
+	ExpiresAt     time.Time
+}
