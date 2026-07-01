@@ -17,6 +17,7 @@ export const enUS = {
       loadingAction: "Logging in",
       checkingSession: "Loading sign-in status",
       error: "Login failed. Check your account and password, then try again.",
+      successPrefix: "Signed in with W3",
     },
     nav: {
       resumeParse: "Resume parsing",

@@ -87,6 +87,7 @@ describe("App", () => {
     expect(await screen.findByText("张三")).toBeInTheDocument();
     expect(screen.getByText("A12345")).toBeInTheDocument();
     expect(screen.getByText("游客")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("已通过 W3 登录 · 游客");
   });
 
   it("shows a loading state while login is pending", async () => {

@@ -17,6 +17,7 @@ export const zhCN = {
       loadingAction: "登录中",
       checkingSession: "正在加载登录状态",
       error: "登录失败，请检查账号和密码后重试。",
+      successPrefix: "已通过 W3 登录",
     },
     nav: {
       resumeParse: "简历解析",

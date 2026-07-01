@@ -17,6 +17,7 @@ const (
 	AuthSessionExpired   Code = "AUTH_SESSION_EXPIRED"
 	AuthSessionRevoked   Code = "AUTH_SESSION_REVOKED"
 	AuthLoginFailed      Code = "AUTH_LOGIN_FAILED"
+	AuthHTTPSRequired    Code = "AUTH_HTTPS_REQUIRED"
 	PermissionDenied     Code = "IAM_PERMISSION_DENIED"
 	IAMRoleRelationCycle Code = "IAM_ROLE_RELATION_CYCLE"
 	ValidationFailed     Code = "VALIDATION_FAILED"
@@ -111,7 +112,7 @@ func codeForStatus(status int) Code {
 
 func statusForCode(code Code) int {
 	switch code {
-	case Unauthenticated, AuthCSRFInvalid, AuthW3Invalid, AuthSessionExpired, AuthSessionRevoked:
+	case Unauthenticated, AuthCSRFInvalid, AuthW3Invalid, AuthSessionExpired, AuthSessionRevoked, AuthHTTPSRequired:
 		return http.StatusUnauthorized
 	case AuthW3Unavailable:
 		return http.StatusServiceUnavailable
@@ -144,6 +145,8 @@ func defaultMessage(code Code) string {
 		return "登录已在其他设备失效"
 	case AuthLoginFailed:
 		return "登录失败，请稍后重试"
+	case AuthHTTPSRequired:
+		return "生产环境必须使用 HTTPS 登录"
 	case PermissionDenied:
 		return "没有权限"
 	case ValidationFailed, IAMRoleRelationCycle:

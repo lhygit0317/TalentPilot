@@ -36,6 +36,7 @@ export function App() {
   const [isCheckingSession, setIsCheckingSession] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -74,6 +75,7 @@ export function App() {
         return;
       }
       setSession(data);
+      setSuccessMessage(`${text.login.successPrefix} · ${data.roleLabels.join("、")}`);
       setAccount("");
       setPassword("");
     } catch {
@@ -86,6 +88,7 @@ export function App() {
   async function handleLogout() {
     await logout();
     setSession(null);
+    setSuccessMessage(null);
     setPassword("");
   }
 
@@ -177,6 +180,11 @@ export function App() {
         </div>
       </header>
       <section className="px-6 py-8">
+        {successMessage ? (
+          <p className="mb-4 text-sm text-accent" role="status">
+            {successMessage}
+          </p>
+        ) : null}
         <h1 className="text-2xl font-semibold tracking-normal">{routeLabels[activePage] ?? text.nav.resumeParse}</h1>
       </section>
     </main>

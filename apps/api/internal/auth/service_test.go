@@ -3,8 +3,12 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/talentpilot/talentpilot/apps/api/internal/audit"
 )
 
 func TestLoginCreatesUserGuestBindingAndSession(t *testing.T) {
@@ -112,6 +116,55 @@ func TestLogoutValidatesSessionCSRFAndRevokesCurrentSession(t *testing.T) {
 	}
 }
 
+func TestLoginRecordsAuditWithoutPassword(t *testing.T) {
+	auditLog := &fakeAuditRecorder{}
+	failingService := NewService(ServiceConfig{
+		W3:          &fakeW3{errors: []error{ErrInvalidCredentials}},
+		Store:       newFakeStore(),
+		TokenSource: fixedTokenSource("auth_fail", "csrf_fail"),
+		Now:         fixedNow,
+		Audit:       auditLog,
+	})
+
+	_, err := failingService.Login(context.Background(), LoginInput{Account: "bad", Password: "secret-password"})
+	if !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("expected invalid credentials, got %v", err)
+	}
+	assertAuditEvent(t, auditLog.events, audit.EventLoginFailed, "", "secret-password")
+
+	auditLog.events = nil
+	successService := NewService(ServiceConfig{
+		W3:          &fakeW3{identity: W3Identity{ID: "w3_audit", Name: "审计用户", EmployeeID: "A001"}},
+		Store:       newFakeStore(),
+		TokenSource: fixedTokenSource("auth_success", "csrf_success"),
+		Now:         fixedNow,
+		Audit:       auditLog,
+	})
+
+	if _, err := successService.Login(context.Background(), LoginInput{Account: "audited", Password: "secret-password"}); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	assertAuditEvent(t, auditLog.events, audit.EventLoginSucceeded, "w3_audit", "secret-password")
+}
+
+func TestLogoutRecordsAuditWithoutTokens(t *testing.T) {
+	auditLog := &fakeAuditRecorder{}
+	store := newFakeStore()
+	store.session = SessionSummary{
+		ID:            "session_logout",
+		TokenHash:     HashToken("auth_logout"),
+		CSRFTokenHash: HashToken("csrf_logout"),
+		User:          UserSummary{ID: "w3_logout", Name: "退出用户", EmployeeID: "H002"},
+	}
+	service := NewService(ServiceConfig{Store: store, TokenSource: fixedTokenSource("unused", "csrf"), Now: fixedNow, Audit: auditLog})
+
+	if err := service.Logout(context.Background(), "auth_logout", "csrf_logout"); err != nil {
+		t.Fatalf("logout: %v", err)
+	}
+	assertAuditEvent(t, auditLog.events, audit.EventLogoutSucceeded, "w3_logout", "auth_logout")
+	assertAuditEvent(t, auditLog.events, audit.EventLogoutSucceeded, "w3_logout", "csrf_logout")
+}
+
 func TestIssueCSRFReturnsRawCSRFToken(t *testing.T) {
 	service := NewService(ServiceConfig{Store: newFakeStore(), TokenSource: fixedTokenSource("unused_auth", "csrf_issued"), Now: fixedNow})
 
@@ -189,6 +242,32 @@ type fakeStore struct {
 	findTokenHash            string
 	revokedSessionID         string
 	revokedForUser           []string
+}
+
+type fakeAuditRecorder struct {
+	events []audit.Event
+}
+
+func (r *fakeAuditRecorder) Record(ctx context.Context, event audit.Event) error {
+	r.events = append(r.events, event)
+	return nil
+}
+
+func assertAuditEvent(t *testing.T, events []audit.Event, expectedType audit.EventType, expectedUserID string, forbidden string) {
+	t.Helper()
+	if len(events) != 1 {
+		t.Fatalf("expected one audit event, got %#v", events)
+	}
+	event := events[0]
+	if event.Type != expectedType {
+		t.Fatalf("expected audit type %q, got %#v", expectedType, event)
+	}
+	if expectedUserID != "" && event.UserID != expectedUserID {
+		t.Fatalf("expected audit user %q, got %#v", expectedUserID, event)
+	}
+	if strings.Contains(fmt.Sprintf("%#v", event), forbidden) {
+		t.Fatalf("audit event leaked forbidden value %q: %#v", forbidden, event)
+	}
 }
 
 func newFakeStore() *fakeStore {

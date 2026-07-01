@@ -26,6 +26,7 @@ func main() {
 	server := app.NewServerWithOptions(app.Options{
 		AuthService:    authService,
 		FrontendOrigin: cfg.FrontendOrigin,
+		RequireHTTPS:   cfg.Env == "production",
 		SecureCookies:  cfg.SecureCookies,
 	})
 

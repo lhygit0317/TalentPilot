@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 )
 
@@ -64,6 +65,72 @@ func TestW3LoginRejectsInvalidOrigin(t *testing.T) {
 		t.Fatalf("expected invalid origin not to call login, got %d calls", authSvc.loginCalls)
 	}
 	assertErrorCode(t, rec.Body.String(), "AUTH_CSRF_INVALID")
+}
+
+func TestCORSAllowsConfiguredFrontendCredentialedRequests(t *testing.T) {
+	server := NewServerWithOptions(Options{AuthService: newFakeHTTPAuthService(), FrontendOrigin: "http://localhost:5173"})
+	req := httptest.NewRequest(http.MethodOptions, "/auth/w3/login", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	req.Header.Set("Access-Control-Request-Headers", "X-CSRF-Token, Content-Type")
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected CORS preflight 204, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get("Access-Control-Allow-Origin") != "http://localhost:5173" {
+		t.Fatalf("unexpected allow origin %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+	if rec.Header().Get("Access-Control-Allow-Credentials") != "true" {
+		t.Fatalf("expected credentialed CORS")
+	}
+	if !strings.Contains(rec.Header().Get("Access-Control-Allow-Headers"), "X-CSRF-Token") {
+		t.Fatalf("expected X-CSRF-Token in allowed headers, got %q", rec.Header().Get("Access-Control-Allow-Headers"))
+	}
+}
+
+func TestProductionW3LoginRequiresHTTPSBeforeCallingService(t *testing.T) {
+	authSvc := newFakeHTTPAuthService()
+	server := NewServerWithOptions(Options{AuthService: authSvc, FrontendOrigin: "https://talentpilot.example", RequireHTTPS: true})
+	req := httptest.NewRequest(http.MethodPost, "/auth/w3/login", strings.NewReader(`{"account":"zhangsan","password":"secret"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://talentpilot.example")
+	req.Header.Set("X-CSRF-Token", "csrf_before")
+	req.AddCookie(&http.Cookie{Name: "tp_csrf", Value: "csrf_before"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if authSvc.loginCalls != 0 {
+		t.Fatalf("expected insecure login not to call service, got %d calls", authSvc.loginCalls)
+	}
+	assertErrorCode(t, rec.Body.String(), "AUTH_HTTPS_REQUIRED")
+}
+
+func TestProductionW3LoginAcceptsTrustedForwardedHTTPS(t *testing.T) {
+	authSvc := newFakeHTTPAuthService()
+	server := NewServerWithOptions(Options{AuthService: authSvc, FrontendOrigin: "https://talentpilot.example", RequireHTTPS: true})
+	req := httptest.NewRequest(http.MethodPost, "/auth/w3/login", strings.NewReader(`{"account":"zhangsan","password":"secret"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://talentpilot.example")
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-CSRF-Token", "csrf_before")
+	req.AddCookie(&http.Cookie{Name: "tp_csrf", Value: "csrf_before"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if authSvc.loginCalls != 1 {
+		t.Fatalf("expected trusted HTTPS login to call service once, got %d", authSvc.loginCalls)
+	}
 }
 
 func TestW3LoginSetsAuthAndCSRFCookies(t *testing.T) {
@@ -129,6 +196,46 @@ func TestLogoutRevokesSessionAndExpiresCookies(t *testing.T) {
 	}
 	assertCookie(t, rec.Result().Cookies(), "tp_auth", "", true, -1)
 	assertCookie(t, rec.Result().Cookies(), "tp_csrf", "", false, -1)
+}
+
+func TestAuthenticatedMutationMiddlewareRequiresCSRFForFutureRoutes(t *testing.T) {
+	authSvc := newFakeHTTPAuthService()
+	server := NewServerWithOptions(Options{AuthService: authSvc, FrontendOrigin: "https://talentpilot.example"})
+	server.Echo.POST("/future/mutation", func(c echo.Context) error {
+		return c.NoContent(http.StatusNoContent)
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/future/mutation", nil)
+	req.Header.Set("Origin", "https://talentpilot.example")
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	assertErrorCode(t, rec.Body.String(), "AUTH_CSRF_INVALID")
+}
+
+func TestAuthenticatedMiddlewareRejectsInvalidSessionForFutureRoutes(t *testing.T) {
+	authSvc := newFakeHTTPAuthService()
+	authSvc.currentUserErr = auth.ErrUnauthenticated
+	server := NewServerWithOptions(Options{AuthService: authSvc, FrontendOrigin: "https://talentpilot.example"})
+	server.Echo.GET("/future/session", func(c echo.Context) error {
+		return c.NoContent(http.StatusNoContent)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/future/session", nil)
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	assertErrorCode(t, rec.Body.String(), "AUTH_UNAUTHENTICATED")
 }
 
 type fakeHTTPAuthService struct {
