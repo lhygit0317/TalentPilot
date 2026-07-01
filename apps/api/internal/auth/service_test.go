@@ -63,6 +63,67 @@ func TestLoginUsesAtomicSessionRotation(t *testing.T) {
 	}
 }
 
+func TestCurrentUserLoadsSessionByHashedToken(t *testing.T) {
+	store := newFakeStore()
+	store.session = SessionSummary{
+		ID:            "session_current",
+		TokenHash:     HashToken("auth_current"),
+		CSRFTokenHash: HashToken("csrf_current"),
+		User:          UserSummary{ID: "w3_current", Name: "当前用户", EmployeeID: "H001"},
+		RoleBindings:  []RoleBinding{{RoleLabel: "游客", DepartmentID: "__system__", DepartmentName: "system"}},
+		ExpiresAt:     fixedNow().Add(time.Hour),
+	}
+	service := NewService(ServiceConfig{Store: store, TokenSource: fixedTokenSource("unused", "csrf"), Now: fixedNow})
+
+	result, err := service.CurrentUser(context.Background(), "auth_current")
+	if err != nil {
+		t.Fatalf("current user: %v", err)
+	}
+	if store.findTokenHash != HashToken("auth_current") {
+		t.Fatalf("expected hashed token lookup, got %q", store.findTokenHash)
+	}
+	if result.User.ID != "w3_current" || len(result.RoleLabels) != 1 || result.DefaultRoute != "/resume-parse" {
+		t.Fatalf("unexpected current user result: %#v", result)
+	}
+}
+
+func TestLogoutValidatesSessionCSRFAndRevokesCurrentSession(t *testing.T) {
+	store := newFakeStore()
+	store.session = SessionSummary{
+		ID:            "session_logout",
+		TokenHash:     HashToken("auth_logout"),
+		CSRFTokenHash: HashToken("csrf_logout"),
+		User:          UserSummary{ID: "w3_logout", Name: "退出用户", EmployeeID: "H002"},
+	}
+	service := NewService(ServiceConfig{Store: store, TokenSource: fixedTokenSource("unused", "csrf"), Now: fixedNow})
+
+	if err := service.Logout(context.Background(), "auth_logout", "wrong_csrf"); !errors.Is(err, ErrCSRFInvalid) {
+		t.Fatalf("expected CSRF error, got %v", err)
+	}
+	if store.revokedSessionID != "" {
+		t.Fatalf("expected CSRF failure not to revoke session, got %q", store.revokedSessionID)
+	}
+
+	if err := service.Logout(context.Background(), "auth_logout", "csrf_logout"); err != nil {
+		t.Fatalf("logout: %v", err)
+	}
+	if store.revokedSessionID != "session_logout" {
+		t.Fatalf("expected current session revoked, got %q", store.revokedSessionID)
+	}
+}
+
+func TestIssueCSRFReturnsRawCSRFToken(t *testing.T) {
+	service := NewService(ServiceConfig{Store: newFakeStore(), TokenSource: fixedTokenSource("unused_auth", "csrf_issued"), Now: fixedNow})
+
+	token, err := service.IssueCSRF(context.Background())
+	if err != nil {
+		t.Fatalf("issue csrf: %v", err)
+	}
+	if token != "csrf_issued" {
+		t.Fatalf("expected raw CSRF token, got %q", token)
+	}
+}
+
 func TestLoginRetriesW3TimeoutOnce(t *testing.T) {
 	store := newFakeStore()
 	w3 := &fakeW3{errors: []error{ErrW3Timeout}, identity: W3Identity{ID: "w3_2", Name: "李四", EmployeeID: "B456"}}
@@ -124,6 +185,9 @@ type fakeStore struct {
 	keepSessionID            string
 	rotateCalled             bool
 	rejectSeparateSessionOps bool
+	session                  SessionSummary
+	findTokenHash            string
+	revokedSessionID         string
 	revokedForUser           []string
 }
 
@@ -155,10 +219,15 @@ func (s *fakeStore) RotateSession(ctx context.Context, input CreateSessionInput)
 }
 
 func (s *fakeStore) FindSessionByTokenHash(ctx context.Context, tokenHash string, now time.Time) (SessionSummary, error) {
-	return SessionSummary{}, ErrUnauthenticated
+	s.findTokenHash = tokenHash
+	if s.session.ID == "" || s.session.TokenHash != tokenHash {
+		return SessionSummary{}, ErrUnauthenticated
+	}
+	return s.session, nil
 }
 
 func (s *fakeStore) RevokeSession(ctx context.Context, sessionID string, now time.Time) error {
+	s.revokedSessionID = sessionID
 	return nil
 }
 

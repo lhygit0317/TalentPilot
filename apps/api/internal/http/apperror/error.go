@@ -10,6 +10,13 @@ type Code string
 
 const (
 	Unauthenticated      Code = "AUTH_UNAUTHENTICATED"
+	AuthCSRFInvalid      Code = "AUTH_CSRF_INVALID"
+	AuthW3Invalid        Code = "AUTH_W3_INVALID_CREDENTIALS"
+	AuthW3Unavailable    Code = "AUTH_W3_UNAVAILABLE"
+	AuthW3Timeout        Code = "AUTH_W3_TIMEOUT"
+	AuthSessionExpired   Code = "AUTH_SESSION_EXPIRED"
+	AuthSessionRevoked   Code = "AUTH_SESSION_REVOKED"
+	AuthLoginFailed      Code = "AUTH_LOGIN_FAILED"
 	PermissionDenied     Code = "IAM_PERMISSION_DENIED"
 	IAMRoleRelationCycle Code = "IAM_ROLE_RELATION_CYCLE"
 	ValidationFailed     Code = "VALIDATION_FAILED"
@@ -25,6 +32,9 @@ type Problem struct {
 }
 
 func NewProblem(code Code, message string, requestID string, details map[string]any) Problem {
+	if message == "" {
+		message = defaultMessage(code)
+	}
 	return NewStatusProblem(statusForCode(code), code, message, requestID, details)
 }
 
@@ -101,8 +111,12 @@ func codeForStatus(status int) Code {
 
 func statusForCode(code Code) int {
 	switch code {
-	case Unauthenticated:
+	case Unauthenticated, AuthCSRFInvalid, AuthW3Invalid, AuthSessionExpired, AuthSessionRevoked:
 		return http.StatusUnauthorized
+	case AuthW3Unavailable:
+		return http.StatusServiceUnavailable
+	case AuthW3Timeout:
+		return http.StatusGatewayTimeout
 	case PermissionDenied:
 		return http.StatusForbidden
 	case ValidationFailed, IAMRoleRelationCycle:
@@ -116,6 +130,20 @@ func defaultMessage(code Code) string {
 	switch code {
 	case Unauthenticated:
 		return "请先登录"
+	case AuthCSRFInvalid:
+		return "登录校验已失效，请刷新后重试"
+	case AuthW3Invalid:
+		return "W3 账号或密码不正确"
+	case AuthW3Unavailable:
+		return "W3 服务暂不可用"
+	case AuthW3Timeout:
+		return "W3 认证超时"
+	case AuthSessionExpired:
+		return "登录已过期"
+	case AuthSessionRevoked:
+		return "登录已在其他设备失效"
+	case AuthLoginFailed:
+		return "登录失败，请稍后重试"
 	case PermissionDenied:
 		return "没有权限"
 	case ValidationFailed, IAMRoleRelationCycle:
@@ -153,7 +181,7 @@ func detailsFromErrors(errs []error) map[string]any {
 				item["location"] = detail.Location
 			}
 			if detail.Value != nil {
-				item["value"] = detail.Value
+				item["valuePresent"] = true
 			}
 		}
 		items = append(items, item)

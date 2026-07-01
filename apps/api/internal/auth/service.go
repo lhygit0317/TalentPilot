@@ -39,6 +39,14 @@ func NewService(cfg ServiceConfig) *Service {
 	}
 }
 
+func (s *Service) IssueCSRF(ctx context.Context) (string, error) {
+	_, csrfToken, err := s.tokenSource()
+	if err != nil {
+		return "", err
+	}
+	return csrfToken, nil
+}
+
 func (s *Service) Login(ctx context.Context, input LoginInput) (LoginResult, error) {
 	identity, err := s.authenticateWithRetry(ctx, W3Credentials{Account: input.Account, Password: input.Password})
 	if err != nil {
@@ -77,12 +85,47 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (LoginResult, err
 	}, nil
 }
 
+func (s *Service) CurrentUser(ctx context.Context, authToken string) (LoginResult, error) {
+	if authToken == "" {
+		return LoginResult{}, ErrUnauthenticated
+	}
+	session, err := s.store.FindSessionByTokenHash(ctx, HashToken(authToken), s.now())
+	if err != nil {
+		return LoginResult{}, err
+	}
+	return loginResultFromSession(session), nil
+}
+
+func (s *Service) Logout(ctx context.Context, authToken string, csrfToken string) error {
+	if authToken == "" {
+		return ErrUnauthenticated
+	}
+	session, err := s.store.FindSessionByTokenHash(ctx, HashToken(authToken), s.now())
+	if err != nil {
+		return err
+	}
+	if csrfToken == "" || session.CSRFTokenHash != HashToken(csrfToken) {
+		return ErrCSRFInvalid
+	}
+	return s.store.RevokeSession(ctx, session.ID, s.now())
+}
+
 func (s *Service) authenticateWithRetry(ctx context.Context, creds W3Credentials) (W3Identity, error) {
 	identity, err := s.w3.Authenticate(ctx, creds)
 	if errors.Is(err, ErrW3Timeout) {
 		return s.w3.Authenticate(ctx, creds)
 	}
 	return identity, err
+}
+
+func loginResultFromSession(session SessionSummary) LoginResult {
+	return LoginResult{
+		User:         session.User,
+		RoleBindings: session.RoleBindings,
+		RoleLabels:   roleLabels(session.RoleBindings),
+		PageAccess:   []string{"resume-parse", "resume-recommend"},
+		DefaultRoute: "/resume-parse",
+	}
 }
 
 func roleLabels(bindings []RoleBinding) []string {
