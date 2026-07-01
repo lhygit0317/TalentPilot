@@ -19,10 +19,11 @@ type Server struct {
 }
 
 type Options struct {
-	AuthService    AuthService
-	FrontendOrigin string
-	RequireHTTPS   bool
-	SecureCookies  bool
+	AuthService         AuthService
+	FrontendOrigin      string
+	RequireHTTPS        bool
+	SecureCookies       bool
+	TrustForwardedProto bool
 }
 
 type AuthService interface {
@@ -72,24 +73,29 @@ func registerMiddleware(e *echo.Echo, options Options) {
 		}))
 	}
 	if options.RequireHTTPS {
-		e.Use(requireHTTPSForCredentialLogin)
+		e.Use(requireHTTPSForCredentialLogin(options.TrustForwardedProto))
 	}
 	e.Use(authenticatedRequestGuard(options))
 }
 
-func requireHTTPSForCredentialLogin(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		request := c.Request()
-		if request.Method == http.MethodPost && request.URL.Path == "/auth/w3/login" && !isHTTPSRequest(request) {
-			return c.JSON(http.StatusUnauthorized, apperror.NewProblem(apperror.AuthHTTPSRequired, "", "", nil))
+func requireHTTPSForCredentialLogin(trustForwardedProto bool) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			request := c.Request()
+			if request.Method == http.MethodPost && request.URL.Path == "/auth/w3/login" && !isHTTPSRequest(request, trustForwardedProto) {
+				return c.JSON(http.StatusUnauthorized, apperror.NewProblem(apperror.AuthHTTPSRequired, "", "", nil))
+			}
+			return next(c)
 		}
-		return next(c)
 	}
 }
 
-func isHTTPSRequest(request *http.Request) bool {
+func isHTTPSRequest(request *http.Request, trustForwardedProto bool) bool {
 	if request.TLS != nil {
 		return true
+	}
+	if !trustForwardedProto {
+		return false
 	}
 	forwardedProto := strings.ToLower(strings.TrimSpace(request.Header.Get("X-Forwarded-Proto")))
 	return forwardedProto == "https"

@@ -31,6 +31,7 @@ Agents must read this file before making changes. If project-wide consensus chan
 - Testing strategy: red-green-refactor TDD. No production behavior without a failing test first.
 - Frontend component rule: business pages must not use raw interactive HTML elements directly. Use shadcn/ui or project-wrapped components.
 - Error strategy: backend returns stable error codes, default Chinese messages, request IDs, and structured details; frontend translates display text through i18n.
+- Production credential safety: W3 login requires HTTPS before password handling. `X-Forwarded-Proto` is trusted only when `TRUST_FORWARDED_PROTO=true` is explicitly set behind a trusted proxy that sanitizes forwarded headers.
 
 ## Required Working Rules for Agents
 

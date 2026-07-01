@@ -10,6 +10,7 @@ func TestLoadUsesTask5Defaults(t *testing.T) {
 	t.Setenv("DATABASE_DSN", "")
 	t.Setenv("FRONTEND_ORIGIN", "")
 	t.Setenv("SECURE_COOKIES", "")
+	t.Setenv("TRUST_FORWARDED_PROTO", "")
 	t.Setenv("W3_MODE", "")
 
 	cfg := Load()
@@ -31,6 +32,9 @@ func TestLoadUsesTask5Defaults(t *testing.T) {
 	}
 	if cfg.SecureCookies {
 		t.Fatalf("expected SecureCookies false outside production")
+	}
+	if cfg.TrustForwardedProto {
+		t.Fatalf("expected TrustForwardedProto false by default")
 	}
 	if cfg.W3Mode != "mock" {
 		t.Fatalf("expected W3Mode mock outside production, got %q", cfg.W3Mode)
@@ -59,6 +63,7 @@ func TestLoadHonorsTask5EnvironmentOverridesWithoutWeakeningProductionCookies(t 
 	t.Setenv("DATABASE_DSN", "host=db user=talentpilot")
 	t.Setenv("FRONTEND_ORIGIN", "https://talentpilot.example")
 	t.Setenv("SECURE_COOKIES", "false")
+	t.Setenv("TRUST_FORWARDED_PROTO", "true")
 	t.Setenv("W3_MODE", "production")
 
 	cfg := Load()
@@ -80,6 +85,9 @@ func TestLoadHonorsTask5EnvironmentOverridesWithoutWeakeningProductionCookies(t 
 	}
 	if !cfg.SecureCookies {
 		t.Fatalf("expected production SecureCookies true even when SECURE_COOKIES=false")
+	}
+	if !cfg.TrustForwardedProto {
+		t.Fatalf("expected explicit TRUST_FORWARDED_PROTO=true to be honored")
 	}
 	if cfg.W3Mode != "production" {
 		t.Fatalf("expected W3Mode override, got %q", cfg.W3Mode)

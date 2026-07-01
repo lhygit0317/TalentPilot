@@ -114,7 +114,7 @@ func TestProductionW3LoginRequiresHTTPSBeforeCallingService(t *testing.T) {
 
 func TestProductionW3LoginAcceptsTrustedForwardedHTTPS(t *testing.T) {
 	authSvc := newFakeHTTPAuthService()
-	server := NewServerWithOptions(Options{AuthService: authSvc, FrontendOrigin: "https://talentpilot.example", RequireHTTPS: true})
+	server := NewServerWithOptions(Options{AuthService: authSvc, FrontendOrigin: "https://talentpilot.example", RequireHTTPS: true, TrustForwardedProto: true})
 	req := httptest.NewRequest(http.MethodPost, "/auth/w3/login", strings.NewReader(`{"account":"zhangsan","password":"secret"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Origin", "https://talentpilot.example")
@@ -131,6 +131,28 @@ func TestProductionW3LoginAcceptsTrustedForwardedHTTPS(t *testing.T) {
 	if authSvc.loginCalls != 1 {
 		t.Fatalf("expected trusted HTTPS login to call service once, got %d", authSvc.loginCalls)
 	}
+}
+
+func TestProductionW3LoginRejectsUntrustedForwardedHTTPS(t *testing.T) {
+	authSvc := newFakeHTTPAuthService()
+	server := NewServerWithOptions(Options{AuthService: authSvc, FrontendOrigin: "https://talentpilot.example", RequireHTTPS: true})
+	req := httptest.NewRequest(http.MethodPost, "/auth/w3/login", strings.NewReader(`{"account":"zhangsan","password":"secret"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://talentpilot.example")
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-CSRF-Token", "csrf_before")
+	req.AddCookie(&http.Cookie{Name: "tp_csrf", Value: "csrf_before"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if authSvc.loginCalls != 0 {
+		t.Fatalf("expected untrusted forwarded proto not to call service, got %d", authSvc.loginCalls)
+	}
+	assertErrorCode(t, rec.Body.String(), "AUTH_HTTPS_REQUIRED")
 }
 
 func TestW3LoginSetsAuthAndCSRFCookies(t *testing.T) {

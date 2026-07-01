@@ -3,13 +3,14 @@ package config
 import "os"
 
 type Config struct {
-	Env            string
-	APIAddr        string
-	DatabaseDriver string
-	DatabaseDSN    string
-	FrontendOrigin string
-	SecureCookies  bool
-	W3Mode         string
+	Env                 string
+	APIAddr             string
+	DatabaseDriver      string
+	DatabaseDSN         string
+	FrontendOrigin      string
+	SecureCookies       bool
+	TrustForwardedProto bool
+	W3Mode              string
 }
 
 func Load() Config {
@@ -25,13 +26,14 @@ func Load() Config {
 	}
 
 	return Config{
-		Env:            env,
-		APIAddr:        envOrDefault("API_ADDR", ":8080"),
-		DatabaseDriver: databaseDriver,
-		DatabaseDSN:    databaseDSN,
-		FrontendOrigin: envOrDefault("FRONTEND_ORIGIN", "http://localhost:5173"),
-		SecureCookies:  secureCookies(env),
-		W3Mode:         w3Mode,
+		Env:                 env,
+		APIAddr:             envOrDefault("API_ADDR", ":8080"),
+		DatabaseDriver:      databaseDriver,
+		DatabaseDSN:         databaseDSN,
+		FrontendOrigin:      envOrDefault("FRONTEND_ORIGIN", "http://localhost:5173"),
+		SecureCookies:       secureCookies(env),
+		TrustForwardedProto: parseBool(os.Getenv("TRUST_FORWARDED_PROTO")),
+		W3Mode:              w3Mode,
 	}
 }
 

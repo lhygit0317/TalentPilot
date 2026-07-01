@@ -24,10 +24,11 @@ func main() {
 		Store: store,
 	})
 	server := app.NewServerWithOptions(app.Options{
-		AuthService:    authService,
-		FrontendOrigin: cfg.FrontendOrigin,
-		RequireHTTPS:   cfg.Env == "production",
-		SecureCookies:  cfg.SecureCookies,
+		AuthService:         authService,
+		FrontendOrigin:      cfg.FrontendOrigin,
+		RequireHTTPS:        cfg.Env == "production",
+		SecureCookies:       cfg.SecureCookies,
+		TrustForwardedProto: cfg.TrustForwardedProto,
 	})
 
 	if err := server.Echo.Start(cfg.APIAddr); err != nil {
