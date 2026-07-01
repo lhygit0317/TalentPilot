@@ -2,14 +2,14 @@
 
 ## Read This First
 
-This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is foundation implemented / ready for next SPEC planning.
+This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is E1 auth implemented / ready for IAM SPEC planning.
 
 Agents must read this file before making changes. If project-wide consensus changes, update this file in the same change set.
 
 ## Current Project Phase
 
-- Phase: Foundation implemented / ready for next SPEC planning.
-- Current source of truth: [docs/specs/000-foundation-architecture.md](docs/specs/000-foundation-architecture.md).
+- Phase: E1 auth implemented / ready for IAM SPEC planning.
+- Current source of truth: [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md) and next planned SPEC `docs/specs/002-iam-permission-model.md`.
 - Current status checklist: [docs/project-status.md](docs/project-status.md).
 - PRD scope: W3 login, IAM, resume parsing, recommendation, resume library, department/position management, user/role management, notifications, custom role management.
 
@@ -117,6 +117,7 @@ Implemented command surface:
 
 - Product requirements: [PRD.md](PRD.md)
 - Foundation SPEC: [docs/specs/000-foundation-architecture.md](docs/specs/000-foundation-architecture.md)
+- E1 Auth Session W3 SPEC: [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md)
 - Project checklist: [docs/project-status.md](docs/project-status.md)
 - ADR index:
   - [docs/adr/0001-use-monorepo.md](docs/adr/0001-use-monorepo.md)
