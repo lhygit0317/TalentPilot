@@ -24,15 +24,61 @@ func TestFoundationMigrationsCreateExpectedSchema(t *testing.T) {
 
 	assertFoundationTablesExist(t, database)
 	assertSystemDepartmentSeeded(t, database)
+	assertGuestRoleSeeded(t, database)
+	assertAuthSessionConstraints(t, database)
 	assertKeyUniqueConstraints(t, database)
 	assertForeignKeysAreEnforced(t, database)
 	assertResumeDeleteCascadesOnlyResumeRelations(t, database)
 	assertReferencedRoleDeleteIsRestricted(t, database)
+	assertGuestBindingDoesNotBlockE1Rollback(t, database)
 
-	if _, err := provider.Down(ctx); err != nil {
-		t.Fatalf("goose down: %v", err)
+	if _, err := provider.DownTo(ctx, 0); err != nil {
+		t.Fatalf("goose down to zero: %v", err)
 	}
 	assertFoundationTablesDropped(t, database)
+}
+
+func TestE1MigrationDownRemovesGuestSeedAfterBindings(t *testing.T) {
+	ctx := context.Background()
+	database := openSQLite(t)
+	provider := newMigrationProvider(t, database)
+
+	if _, err := provider.Up(ctx); err != nil {
+		t.Fatalf("goose up: %v", err)
+	}
+
+	insertUser(t, database, "user_guest_down")
+	mustExec(t, database, `
+		INSERT INTO user_department_roles (id, user_id, department_id, role_id, created_at, created_by)
+		VALUES ('udr_guest_down', 'user_guest_down', '__system__', '__role_guest__', CURRENT_TIMESTAMP, 'migration_test')
+	`)
+
+	if _, err := provider.DownTo(ctx, 1); err != nil {
+		t.Fatalf("goose down to foundation: %v", err)
+	}
+
+	assertCount(t, database, "user_department_roles", "role_id = '__role_guest__'", 0)
+	assertCount(t, database, "permissions", "role_id = '__role_guest__'", 0)
+	assertCount(t, database, "roles", "id = '__role_guest__'", 0)
+}
+
+func TestE1MigrationFailsOnGuestRoleLabelConflict(t *testing.T) {
+	ctx := context.Background()
+	database := openSQLite(t)
+	provider := newMigrationProvider(t, database)
+
+	if _, err := provider.UpTo(ctx, 1); err != nil {
+		t.Fatalf("goose up to foundation: %v", err)
+	}
+
+	mustExec(t, database, `
+		INSERT INTO roles (id, label, description, is_system, enabled, created_at, created_by, updated_at)
+		VALUES ('custom_guest', '游客', 'conflicting custom guest label', FALSE, TRUE, CURRENT_TIMESTAMP, 'migration_test', CURRENT_TIMESTAMP)
+	`)
+
+	if _, err := provider.Up(ctx); err == nil {
+		t.Fatalf("expected E1 migration to fail on conflicting guest role label")
+	}
 }
 
 func openSQLite(t *testing.T) *sql.DB {
@@ -70,6 +116,7 @@ func assertFoundationTablesExist(t *testing.T, database *sql.DB) {
 
 	expected := []string{
 		"audit_logs",
+		"auth_sessions",
 		"department_positions",
 		"department_resumes",
 		"departments",
@@ -101,6 +148,42 @@ func assertSystemDepartmentSeeded(t *testing.T, database *sql.DB) {
 	if name != "system" {
 		t.Fatalf("expected system department name, got %q", name)
 	}
+}
+
+func assertGuestRoleSeeded(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	var id string
+	var isSystem bool
+	var enabled bool
+	err := database.QueryRow("SELECT id, is_system, enabled FROM roles WHERE label = ?", "游客").Scan(&id, &isSystem, &enabled)
+	if err != nil {
+		t.Fatalf("query guest role seed: %v", err)
+	}
+	if id != "__role_guest__" || !isSystem || !enabled {
+		t.Fatalf("expected enabled system guest role, got id=%q is_system=%t enabled=%t", id, isSystem, enabled)
+	}
+
+	assertCount(t, database, "permissions", "role_id = '__role_guest__' AND resource = 'Department' AND action = 'List'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_guest__' AND resource = 'User' AND action = 'Get'", 1)
+}
+
+func assertAuthSessionConstraints(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	insertUser(t, database, "session_user")
+	mustExec(t, database, `
+		INSERT INTO auth_sessions (id, user_id, token_hash, csrf_token_hash, expires_at, created_at, last_seen_at)
+		VALUES ('session_1', 'session_user', 'token_hash_1', 'csrf_hash_1', datetime('now', '+1 hour'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
+	mustFail(t, database, `
+		INSERT INTO auth_sessions (id, user_id, token_hash, csrf_token_hash, expires_at, created_at, last_seen_at)
+		VALUES ('session_2', 'session_user', 'token_hash_1', 'csrf_hash_2', datetime('now', '+1 hour'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
+	mustFail(t, database, `
+		INSERT INTO auth_sessions (id, user_id, token_hash, csrf_token_hash, expires_at, created_at, last_seen_at)
+		VALUES ('session_missing_user', 'missing_user', 'token_hash_missing', 'csrf_hash_missing', datetime('now', '+1 hour'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
 }
 
 func assertKeyUniqueConstraints(t *testing.T, database *sql.DB) {
@@ -192,6 +275,16 @@ func assertReferencedRoleDeleteIsRestricted(t *testing.T, database *sql.DB) {
 	assertCount(t, database, "roles", "id = 'role_restrict'", 1)
 }
 
+func assertGuestBindingDoesNotBlockE1Rollback(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	insertUser(t, database, "user_guest_rollback")
+	mustExec(t, database, `
+		INSERT INTO user_department_roles (id, user_id, department_id, role_id, created_at, created_by)
+		VALUES ('udr_guest_rollback', 'user_guest_rollback', '__system__', '__role_guest__', CURRENT_TIMESTAMP, 'migration_test')
+	`)
+}
+
 func assertFoundationTablesDropped(t *testing.T, database *sql.DB) {
 	t.Helper()
 
@@ -208,8 +301,9 @@ func foundationTableNames(t *testing.T, database *sql.DB) []string {
 		FROM sqlite_master
 		WHERE type = 'table'
 			AND name IN (
-				'audit_logs',
-				'department_positions',
+					'audit_logs',
+					'auth_sessions',
+					'department_positions',
 				'department_resumes',
 				'departments',
 				'jobs',
@@ -356,9 +450,11 @@ func TestFoundationMigrationsRunOnPostgresWhenConfigured(t *testing.T) {
 
 	assertPostgresFoundationTablesExist(t, database)
 	assertPostgresSystemDepartmentSeeded(t, database)
+	assertPostgresGuestRoleSeeded(t, database)
+	assertPostgresAuthSessionConstraints(t, database)
 
-	if _, err := provider.Down(ctx); err != nil {
-		t.Fatalf("postgres goose down: %v", err)
+	if _, err := provider.DownTo(ctx, 0); err != nil {
+		t.Fatalf("postgres goose down to zero: %v", err)
 	}
 	assertPostgresFoundationTablesDropped(t, database)
 }
@@ -387,6 +483,7 @@ func assertPostgresFoundationTablesExist(t *testing.T, database *sql.DB) {
 
 	expected := []string{
 		"audit_logs",
+		"auth_sessions",
 		"department_positions",
 		"department_resumes",
 		"departments",
@@ -405,6 +502,45 @@ func assertPostgresFoundationTablesExist(t *testing.T, database *sql.DB) {
 	if names := postgresFoundationTableNames(t, database); !slices.Equal(names, expected) {
 		t.Fatalf("expected postgres foundation tables %v, got %v", expected, names)
 	}
+}
+
+func assertPostgresGuestRoleSeeded(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	var id string
+	var isSystem bool
+	var enabled bool
+	err := database.QueryRow("SELECT id, is_system, enabled FROM roles WHERE label = $1", "游客").Scan(&id, &isSystem, &enabled)
+	if err != nil {
+		t.Fatalf("query postgres guest role seed: %v", err)
+	}
+	if id != "__role_guest__" || !isSystem || !enabled {
+		t.Fatalf("expected postgres enabled system guest role, got id=%q is_system=%t enabled=%t", id, isSystem, enabled)
+	}
+
+	assertCount(t, database, "permissions", "role_id = '__role_guest__' AND resource = 'Department' AND action = 'List'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_guest__' AND resource = 'User' AND action = 'Get'", 1)
+}
+
+func assertPostgresAuthSessionConstraints(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	mustExec(t, database, `
+		INSERT INTO users (id, employee_id, name, created_at, updated_at)
+		VALUES ('session_user', 'session_user_employee', 'session_user_name', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
+	mustExec(t, database, `
+		INSERT INTO auth_sessions (id, user_id, token_hash, csrf_token_hash, expires_at, created_at, last_seen_at)
+		VALUES ('session_1', 'session_user', 'token_hash_1', 'csrf_hash_1', CURRENT_TIMESTAMP + INTERVAL '1 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
+	mustFail(t, database, `
+		INSERT INTO auth_sessions (id, user_id, token_hash, csrf_token_hash, expires_at, created_at, last_seen_at)
+		VALUES ('session_2', 'session_user', 'token_hash_1', 'csrf_hash_2', CURRENT_TIMESTAMP + INTERVAL '1 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
+	mustFail(t, database, `
+		INSERT INTO auth_sessions (id, user_id, token_hash, csrf_token_hash, expires_at, created_at, last_seen_at)
+		VALUES ('session_missing_user', 'missing_user', 'token_hash_missing', 'csrf_hash_missing', CURRENT_TIMESTAMP + INTERVAL '1 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
 }
 
 func assertPostgresSystemDepartmentSeeded(t *testing.T, database *sql.DB) {
@@ -437,8 +573,9 @@ func postgresFoundationTableNames(t *testing.T, database *sql.DB) []string {
 		WHERE table_schema = 'public'
 			AND table_type = 'BASE TABLE'
 			AND table_name IN (
-				'audit_logs',
-				'department_positions',
+					'audit_logs',
+					'auth_sessions',
+					'department_positions',
 				'department_resumes',
 				'departments',
 				'jobs',

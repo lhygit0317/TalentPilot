@@ -33,6 +33,8 @@ This plan implements only `docs/specs/001-auth-session-w3.md`. It does not imple
 - Regenerate `packages/api-contract/openapi.json` and `packages/api-client/src/schema.d.ts`.
 - Create `apps/web/src/api/client.ts`: generated client wrapper with CSRF header support.
 - Create `apps/web/src/components/ui/input.tsx`: project-wrapped input component.
+- Create `apps/web/src/components/ui/form.tsx`: project-wrapped form and field components.
+- Create `apps/web/src/components/ui/nav-link.tsx`: project-wrapped navigation link component.
 - Replace `apps/web/src/app/App.tsx`: login/session shell with guest navigation.
 - Modify `apps/web/src/app/App.test.tsx`: login, guest navigation, logout tests.
 - Modify `apps/web/src/i18n/zh-CN.ts` and `apps/web/src/i18n/en-US.ts`: E1 text.
@@ -45,11 +47,11 @@ This plan implements only `docs/specs/001-auth-session-w3.md`. It does not imple
 - Read: `docs/specs/001-auth-session-w3.md`
 - Read: `docs/project-status.md`
 
-- [ ] **Step 1: Enter an isolated workspace**
+- [x] **Step 1: Enter an isolated workspace**
 
 Use `superpowers:using-git-worktrees` before implementation. If already in a linked worktree, continue there. If working in place by user preference, record that in the task notes.
 
-- [ ] **Step 2: Verify baseline**
+- [x] **Step 2: Verify baseline**
 
 Run:
 
@@ -1100,6 +1102,8 @@ git commit -m "feat(api): generate auth contract"
 **Files:**
 - Create: `apps/web/src/api/client.ts`
 - Create: `apps/web/src/components/ui/input.tsx`
+- Create: `apps/web/src/components/ui/form.tsx`
+- Create: `apps/web/src/components/ui/nav-link.tsx`
 - Modify: `apps/web/src/app/App.tsx`
 - Modify: `apps/web/src/app/App.test.tsx`
 - Modify: `apps/web/src/i18n/zh-CN.ts`
@@ -1143,9 +1147,9 @@ pnpm --filter @talentpilot/web test -- --run src/app/App.test.tsx
 
 Expected: FAIL because the app still renders the foundation shell.
 
-- [ ] **Step 3: Add project input component**
+- [ ] **Step 3: Add project form components**
 
-Create `input.tsx`:
+Create `input.tsx`, `form.tsx`, and `nav-link.tsx`. Business page code must not directly use raw interactive HTML elements such as `form` or `a`; those elements live behind project UI wrappers.
 
 ```tsx
 import * as React from "react";
@@ -1221,7 +1225,7 @@ export function App() {
   return (
     <main aria-label="TalentPilot 工作台" className="min-h-screen bg-bg text-fg">
       <nav aria-label="主导航" className="flex gap-2 border-b border-white/10 px-6 py-4">
-        {guestLinks.map((label) => <a key={label} href="#" className="text-sm text-fg">{label}</a>)}
+        {guestLinks.map((label) => <NavLink key={label} href="#">{label}</NavLink>)}
       </nav>
       <section className="px-6 py-8">
         <h1 className="text-2xl font-semibold">简历解析</h1>
@@ -1239,17 +1243,15 @@ function LoginForm(props: {
 }) {
   return (
     <main aria-label="登录" className="min-h-screen bg-bg px-6 py-10 text-fg">
-      <form onSubmit={props.onSubmit} className="mx-auto grid max-w-sm gap-4">
-        <label className="grid gap-2 text-sm">
-          公司账号
+      <Form onSubmit={props.onSubmit} className="mx-auto grid max-w-sm gap-4">
+        <Field label="公司账号">
           <Input value={props.account} onChange={(event) => props.onAccountChange(event.target.value)} />
-        </label>
-        <label className="grid gap-2 text-sm">
-          公司密码
+        </Field>
+        <Field label="公司密码">
           <Input type="password" value={props.password} onChange={(event) => props.onPasswordChange(event.target.value)} />
-        </label>
+        </Field>
         <Button variant="primary" type="submit">登录</Button>
-      </form>
+      </Form>
     </main>
   );
 }
@@ -1296,7 +1298,7 @@ Expected: all pass.
 Change the E1 row in `docs/project-status.md` to:
 
 ```markdown
-| E1 | Login and identity authentication | In Progress | E1 implementation has auth schema, W3 login API, token Cookie sessions, CSRF, `/me`, logout, generated client, and login shell tests passing. | Run full `make ci`; then start `002-iam-permission-model.md`. |
+| E1 | Login and identity authentication | Done | E1 implementation has auth schema, W3 login API, token Cookie sessions, CSRF, `/me`, logout, generated client, and login shell tests passing. | Start `002-iam-permission-model.md`. |
 ```
 
 - [ ] **Step 3: Commit status update**
