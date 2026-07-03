@@ -2,14 +2,14 @@
 
 ## Read This First
 
-This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is IAM SPEC drafted / ready for review and implementation planning.
+This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is IAM SPEC and implementation plan drafted / ready for execution.
 
 Agents must read this file before making changes. If project-wide consensus changes, update this file in the same change set.
 
 ## Current Project Phase
 
-- Phase: IAM SPEC drafted / ready for review and implementation planning.
-- Current source of truth: [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md), building on [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md).
+- Phase: IAM SPEC and implementation plan drafted / ready for execution.
+- Current source of truth: [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md) and [docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md](docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md), building on [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md).
 - Current status checklist: [docs/project-status.md](docs/project-status.md).
 - PRD scope: W3 login, IAM, resume parsing, recommendation, resume library, department/position management, user/role management, notifications, custom role management.
 
@@ -121,6 +121,7 @@ Implemented command surface:
 - Foundation SPEC: [docs/specs/000-foundation-architecture.md](docs/specs/000-foundation-architecture.md)
 - E1 Auth Session W3 SPEC: [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md)
 - IAM Permission Model SPEC: [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md)
+- IAM implementation plan: [docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md](docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md)
 - Project checklist: [docs/project-status.md](docs/project-status.md)
 - ADR index:
   - [docs/adr/0001-use-monorepo.md](docs/adr/0001-use-monorepo.md)
