@@ -4,12 +4,13 @@ TalentPilot is a frontend/backend separated recruiting intelligence assistant fo
 
 ## Current Phase
 
-E1 auth implementation complete; IAM SPEC planning is next. See:
+E1 auth implementation is complete; IAM SPEC is drafted and ready for review / implementation planning. See:
 
 - `PRD.md`
 - `AGENTS.md`
 - `docs/specs/000-foundation-architecture.md`
 - `docs/specs/001-auth-session-w3.md`
+- `docs/specs/002-iam-permission-model.md`
 - `docs/project-status.md`
 
 ## Commands

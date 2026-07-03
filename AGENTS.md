@@ -2,14 +2,14 @@
 
 ## Read This First
 
-This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is E1 auth implemented / ready for IAM SPEC planning.
+This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is IAM SPEC drafted / ready for review and implementation planning.
 
 Agents must read this file before making changes. If project-wide consensus changes, update this file in the same change set.
 
 ## Current Project Phase
 
-- Phase: E1 auth implemented / ready for IAM SPEC planning.
-- Current source of truth: [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md) and next planned SPEC `docs/specs/002-iam-permission-model.md`.
+- Phase: IAM SPEC drafted / ready for review and implementation planning.
+- Current source of truth: [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md), building on [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md).
 - Current status checklist: [docs/project-status.md](docs/project-status.md).
 - PRD scope: W3 login, IAM, resume parsing, recommendation, resume library, department/position management, user/role management, notifications, custom role management.
 
@@ -88,6 +88,7 @@ This file should contain stable rules and indexes only. Put detailed designs in 
 - Backend DTOs must not expose GORM persistence models directly.
 - Backend handlers must not contain business authorization logic; authorization must be centralized through middleware/guards and IAM services.
 - List APIs must apply permission predicates in backend queries. Do not fetch all data and filter permissions in the frontend.
+- IAM implementation source: [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md). It defines resource/action enums, preset roles, Permission whitelist, RoleRelation expansion, data-scope predicates, `/me` IAM additions, error codes, audit boundaries, and cache invalidation.
 
 ## Commands Index
 
@@ -119,6 +120,7 @@ Implemented command surface:
 - Product requirements: [PRD.md](PRD.md)
 - Foundation SPEC: [docs/specs/000-foundation-architecture.md](docs/specs/000-foundation-architecture.md)
 - E1 Auth Session W3 SPEC: [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md)
+- IAM Permission Model SPEC: [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md)
 - Project checklist: [docs/project-status.md](docs/project-status.md)
 - ADR index:
   - [docs/adr/0001-use-monorepo.md](docs/adr/0001-use-monorepo.md)

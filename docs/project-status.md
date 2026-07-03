@@ -40,7 +40,8 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 | Epic | Scope | Status | Foundation Dependency | Next SPEC |
 | --- | --- | --- | --- | --- |
-| E1 | Login and identity authentication | Done | `docs/specs/001-auth-session-w3.md`; backend auth schema/service/routes, generated OpenAPI/client, and frontend W3 login shell are implemented. Verification: `make test-api`, `make test-web`, `make openapi-check`, `make client-check`, `make typecheck`. | Start `docs/specs/002-iam-permission-model.md`. |
+| E1 | Login and identity authentication | Done | `docs/specs/001-auth-session-w3.md`; backend auth schema/service/routes, generated OpenAPI/client, and frontend W3 login shell are implemented. Verification: `make test-api`, `make test-web`, `make openapi-check`, `make client-check`, `make typecheck`, `make lint`, `make build`. | Use as dependency for IAM implementation. |
+| IAM | Permission model foundation | In Progress | `docs/specs/002-iam-permission-model.md` drafted: runtime IAM core, preset roles, Permission whitelist, RoleRelation expansion, data-scope predicates, `/me` additions, errors, audit, cache invalidation, and tests. | Review SPEC, then write implementation plan. |
 | E2 | Resume parsing | Not Started | Resume library, positions, matching, jobs | `005-resume-parse-workspace.md` |
 | E3 | Resume recommendation and routing | Not Started | IAM, resumes, positions, notifications | `006-resume-recommendation-notification.md` |
 | E4 | Resume library | Not Started | IAM, DB schema, resume service | `003-resume-library-import.md` |
@@ -51,6 +52,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 ## Current Recommended Order
 
-1. Write `docs/specs/002-iam-permission-model.md`.
-2. Implement IAM permission model after SPEC approval.
-3. Plan the next business EPIC after IAM permissions are in place.
+1. Review and approve `docs/specs/002-iam-permission-model.md`.
+2. Write the IAM implementation plan.
+3. Implement IAM permission model after plan approval.
+4. Plan the next business EPIC after IAM permissions are in place.
