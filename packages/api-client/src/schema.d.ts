@@ -94,11 +94,22 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AuthResponse: {
+            dataScope: components["schemas"]["DataScope"];
             defaultRoute: string;
             pageAccess: string[];
+            permissions: string[];
             roleBindings: components["schemas"]["RoleBinding"][];
             roleLabels: string[];
             user: components["schemas"]["UserSummary"];
+        };
+        DataScope: {
+            allDepartments: boolean;
+            channels: string[];
+            departments: components["schemas"]["DepartmentScope"][];
+        };
+        DepartmentScope: {
+            id: string;
+            name: string;
         };
         HealthOutputBody: {
             /** @example ok */

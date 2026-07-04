@@ -8,8 +8,14 @@ import { getCurrentUser, loginWithW3, logout } from "../api/client";
 import "../styles/globals.css";
 
 type SessionView = {
+  dataScope: {
+    allDepartments: boolean;
+    channels: string[];
+    departments: Array<{ id: string; name: string }>;
+  };
   defaultRoute: string;
   pageAccess: string[];
+  permissions: string[];
   roleBindings: Array<{
     departmentId: string;
     departmentName: string;
@@ -24,8 +30,19 @@ type SessionView = {
 };
 
 const routeLabels: Record<string, string> = {
+  "audit-logs": zhCN.session.nav.auditLogs,
+  "departments-positions": zhCN.session.nav.departmentsPositions,
+  notifications: zhCN.session.nav.notifications,
+  "resume-library": zhCN.session.nav.resumeLibrary,
   "resume-parse": zhCN.session.nav.resumeParse,
   "resume-recommend": zhCN.session.nav.resumeRecommend,
+  roles: zhCN.session.nav.roles,
+  users: zhCN.session.nav.users,
+};
+
+const channelLabels: Record<string, string> = {
+  campus: zhCN.session.workspace.channels.campus,
+  social: zhCN.session.workspace.channels.social,
 };
 
 export function App() {
@@ -150,6 +167,8 @@ export function App() {
     .map((page) => ({ href: `#${page}`, label: routeLabels[page] }))
     .filter((link): link is { href: string; label: string } => Boolean(link.label));
   const activePage = session.defaultRoute.replace(/^\//, "");
+  const departmentScope = formatDepartmentScope(session.dataScope);
+  const channelScope = formatChannelScope(session.dataScope.channels);
 
   return (
     <main aria-label={text.workspace.mainLabel} className="min-h-screen bg-bg text-fg">
@@ -173,6 +192,8 @@ export function App() {
                 </span>
               ))}
             </span>
+            <span className="text-muted">{departmentScope}</span>
+            <span className="text-muted">{channelScope}</span>
           </div>
           <Button onClick={handleLogout} type="button">
             {text.workspace.logoutAction}
@@ -189,4 +210,21 @@ export function App() {
       </section>
     </main>
   );
+}
+
+function formatDepartmentScope(dataScope: SessionView["dataScope"]) {
+  if (dataScope.allDepartments) {
+    return zhCN.session.workspace.allDepartments;
+  }
+  if (dataScope.departments.length === 0) {
+    return zhCN.session.workspace.noDepartmentScope;
+  }
+  return dataScope.departments.map((department) => department.name).join("、");
+}
+
+function formatChannelScope(channels: string[]) {
+  if (channels.length === 0) {
+    return zhCN.session.workspace.noChannelScope;
+  }
+  return channels.map((channel) => channelLabels[channel] ?? channel).join("、");
 }

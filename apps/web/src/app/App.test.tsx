@@ -13,7 +13,9 @@ vi.mock("../api/client", () => apiMocks);
 
 const guestSession = {
   defaultRoute: "/resume-parse",
+  dataScope: { allDepartments: false, channels: [], departments: [] },
   pageAccess: ["resume-parse", "resume-recommend"],
+  permissions: ["Department.List", "User.Get"],
   roleBindings: [
     {
       departmentId: "__system__",
@@ -27,6 +29,25 @@ const guestSession = {
     id: "w3-user-id",
     name: "张三",
   },
+};
+
+const hrbpSession = {
+  ...guestSession,
+  dataScope: {
+    allDepartments: false,
+    channels: ["social", "campus"],
+    departments: [{ id: "dept_a", name: "算力训练平台部" }],
+  },
+  pageAccess: ["resume-parse", "resume-recommend", "resume-library", "departments-positions"],
+  permissions: ["Resume.List", "Resume.Get", "Position.List", "PositionResume.Create"],
+  roleBindings: [
+    {
+      departmentId: "dept_a",
+      departmentName: "算力训练平台部",
+      roleLabel: "HRBP",
+    },
+  ],
+  roleLabels: ["HRBP"],
 };
 
 async function renderLoginApp() {
@@ -153,6 +174,24 @@ describe("App", () => {
     expect(screen.getByRole("link", { name: "简历推荐" })).toBeInTheDocument();
     expect(screen.queryByText("您当前为游客身份")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "简历库" })).not.toBeInTheDocument();
+  });
+
+  it("shows IAM data scope summary in the workspace header", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({ data: hrbpSession, error: undefined });
+
+    render(<App />);
+
+    expect(await screen.findByText("算力训练平台部")).toBeInTheDocument();
+    expect(screen.getByText("社招、校招")).toBeInTheDocument();
+  });
+
+  it("renders navigation from IAM page access", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({ data: hrbpSession, error: undefined });
+
+    render(<App />);
+
+    expect(await screen.findByRole("link", { name: "简历库" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "部门与岗位" })).toBeInTheDocument();
   });
 
   it("returns to the login form after logout", async () => {
