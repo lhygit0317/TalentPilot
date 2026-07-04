@@ -5,6 +5,8 @@ import { App } from "./App";
 
 const apiMocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
+  getResume: vi.fn(),
+  listResumes: vi.fn(),
   loginWithW3: vi.fn(),
   logout: vi.fn(),
 }));
@@ -192,6 +194,44 @@ describe("App", () => {
 
     expect(await screen.findByRole("link", { name: "简历库" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "部门与岗位" })).toBeInTheDocument();
+  });
+
+  it("renders the resume library page when it is the active IAM route", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({
+      data: { ...hrbpSession, defaultRoute: "/resume-library" },
+      error: undefined,
+    });
+    apiMocks.listResumes.mockResolvedValue({
+      data: {
+        availableChannels: ["social"],
+        channelCounts: { social: 1, campus: 0 },
+        dataScopeSummary: "算力训练平台部",
+        items: [
+          {
+            id: "resume_1",
+            name: "张三",
+            age: 29,
+            school: "浙江大学",
+            yearsExp: 6,
+            currentDepartment: { id: "dept_a", name: "算力训练平台部" },
+            pos: "平台工程师",
+            source: "导入",
+            sourceBy: "李四",
+            chan: "social",
+            keywords: ["Go"],
+            canGet: true,
+            canDelete: false,
+          },
+        ],
+        nextCursor: "",
+      },
+      error: undefined,
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "简历库" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "候选人" })).toBeInTheDocument();
   });
 
   it("returns to the login form after logout", async () => {
