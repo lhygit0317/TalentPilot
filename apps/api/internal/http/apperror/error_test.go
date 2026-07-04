@@ -65,6 +65,33 @@ func TestDefaultMessageIncludesIAMCodes(t *testing.T) {
 	}
 }
 
+func TestResumeLibraryErrorCodesUseStableMessages(t *testing.T) {
+	cases := []struct {
+		code   Code
+		status int
+	}{
+		{ResumeNotFound, http.StatusNotFound},
+		{ResumeImportFileTooLarge, http.StatusUnprocessableEntity},
+		{ResumeImportUnsupportedType, http.StatusUnprocessableEntity},
+		{ResumeImportTargetDepartmentRequired, http.StatusUnprocessableEntity},
+		{ResumeImportTargetDepartmentInvalid, http.StatusUnprocessableEntity},
+		{ResumeImportParseFailed, http.StatusUnprocessableEntity},
+		{ResumeImportEmptyFile, http.StatusUnprocessableEntity},
+		{ResumeDeleteDenied, http.StatusForbidden},
+		{JobNotFound, http.StatusNotFound},
+		{JobAccessDenied, http.StatusForbidden},
+	}
+	for _, tc := range cases {
+		problem := NewProblem(tc.code, "", "req_1", nil)
+		if problem.GetStatus() != tc.status {
+			t.Fatalf("%s status=%d want %d", tc.code, problem.GetStatus(), tc.status)
+		}
+		if problem.Message == "" || problem.RequestID != "req_1" {
+			t.Fatalf("expected message and request id for %s: %#v", tc.code, problem)
+		}
+	}
+}
+
 func TestDetailsFromErrorsDoesNotExposeInvalidValues(t *testing.T) {
 	detail := &huma.ErrorDetail{
 		Message:  "expected string",

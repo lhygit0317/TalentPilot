@@ -101,6 +101,19 @@ func TestIAMSeedMigrationDownRemovesPresetSeed(t *testing.T) {
 	assertCount(t, database, "roles", "id = '__role_guest__'", 1)
 }
 
+func TestResumeImportJobMigrationAddsOwnershipAndResultMetadata(t *testing.T) {
+	ctx := context.Background()
+	database := openSQLite(t)
+	provider := newMigrationProvider(t, database)
+
+	if _, err := provider.Up(ctx); err != nil {
+		t.Fatalf("goose up: %v", err)
+	}
+
+	assertColumnExists(t, database, "jobs", "created_by_user_id")
+	assertColumnExists(t, database, "jobs", "result_json")
+}
+
 func openSQLite(t *testing.T) *sql.DB {
 	t.Helper()
 
@@ -441,6 +454,35 @@ func assertCount(t *testing.T, database *sql.DB, table string, where string, exp
 	if count != expected {
 		t.Fatalf("expected %s where %s count %d, got %d", table, where, expected, count)
 	}
+}
+
+func assertColumnExists(t *testing.T, database *sql.DB, table string, column string) {
+	t.Helper()
+
+	rows, err := database.Query("PRAGMA table_info(" + table + ")")
+	if err != nil {
+		t.Fatalf("inspect columns for %s: %v", table, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid int
+		var name string
+		var columnType string
+		var notNull int
+		var defaultValue sql.NullString
+		var primaryKey int
+		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &primaryKey); err != nil {
+			t.Fatalf("scan column for %s: %v", table, err)
+		}
+		if name == column {
+			return
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate columns for %s: %v", table, err)
+	}
+	t.Fatalf("expected column %s.%s to exist", table, column)
 }
 
 func TestMigrationProviderDoesNotRequireGlobalGooseDialect(t *testing.T) {

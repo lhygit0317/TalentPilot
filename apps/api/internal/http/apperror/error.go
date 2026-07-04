@@ -9,26 +9,36 @@ import (
 type Code string
 
 const (
-	Unauthenticated              Code = "AUTH_UNAUTHENTICATED"
-	AuthCSRFInvalid              Code = "AUTH_CSRF_INVALID"
-	AuthW3Invalid                Code = "AUTH_W3_INVALID_CREDENTIALS"
-	AuthW3Unavailable            Code = "AUTH_W3_UNAVAILABLE"
-	AuthW3Timeout                Code = "AUTH_W3_TIMEOUT"
-	AuthSessionExpired           Code = "AUTH_SESSION_EXPIRED"
-	AuthSessionRevoked           Code = "AUTH_SESSION_REVOKED"
-	AuthLoginFailed              Code = "AUTH_LOGIN_FAILED"
-	AuthHTTPSRequired            Code = "AUTH_HTTPS_REQUIRED"
-	PermissionDenied             Code = "IAM_PERMISSION_DENIED"
-	IAMPermissionNotFound        Code = "IAM_PERMISSION_NOT_FOUND"
-	IAMInvalidResource           Code = "IAM_INVALID_RESOURCE"
-	IAMInvalidAction             Code = "IAM_INVALID_ACTION"
-	IAMInvalidAttributeCondition Code = "IAM_INVALID_ATTRIBUTE_CONDITION"
-	IAMRoleRelationCycle         Code = "IAM_ROLE_RELATION_CYCLE"
-	IAMRoleRelationDepthExceeded Code = "IAM_ROLE_RELATION_DEPTH_EXCEEDED"
-	IAMPrincipalNotFound         Code = "IAM_PRINCIPAL_NOT_FOUND"
-	IAMScopeUnsupported          Code = "IAM_SCOPE_UNSUPPORTED"
-	ValidationFailed             Code = "VALIDATION_FAILED"
-	Internal                     Code = "INTERNAL_ERROR"
+	Unauthenticated                      Code = "AUTH_UNAUTHENTICATED"
+	AuthCSRFInvalid                      Code = "AUTH_CSRF_INVALID"
+	AuthW3Invalid                        Code = "AUTH_W3_INVALID_CREDENTIALS"
+	AuthW3Unavailable                    Code = "AUTH_W3_UNAVAILABLE"
+	AuthW3Timeout                        Code = "AUTH_W3_TIMEOUT"
+	AuthSessionExpired                   Code = "AUTH_SESSION_EXPIRED"
+	AuthSessionRevoked                   Code = "AUTH_SESSION_REVOKED"
+	AuthLoginFailed                      Code = "AUTH_LOGIN_FAILED"
+	AuthHTTPSRequired                    Code = "AUTH_HTTPS_REQUIRED"
+	PermissionDenied                     Code = "IAM_PERMISSION_DENIED"
+	IAMPermissionNotFound                Code = "IAM_PERMISSION_NOT_FOUND"
+	IAMInvalidResource                   Code = "IAM_INVALID_RESOURCE"
+	IAMInvalidAction                     Code = "IAM_INVALID_ACTION"
+	IAMInvalidAttributeCondition         Code = "IAM_INVALID_ATTRIBUTE_CONDITION"
+	IAMRoleRelationCycle                 Code = "IAM_ROLE_RELATION_CYCLE"
+	IAMRoleRelationDepthExceeded         Code = "IAM_ROLE_RELATION_DEPTH_EXCEEDED"
+	IAMPrincipalNotFound                 Code = "IAM_PRINCIPAL_NOT_FOUND"
+	IAMScopeUnsupported                  Code = "IAM_SCOPE_UNSUPPORTED"
+	ResumeNotFound                       Code = "RESUME_NOT_FOUND"
+	ResumeImportFileTooLarge             Code = "RESUME_IMPORT_FILE_TOO_LARGE"
+	ResumeImportUnsupportedType          Code = "RESUME_IMPORT_UNSUPPORTED_TYPE"
+	ResumeImportTargetDepartmentRequired Code = "RESUME_IMPORT_TARGET_DEPARTMENT_REQUIRED"
+	ResumeImportTargetDepartmentInvalid  Code = "RESUME_IMPORT_TARGET_DEPARTMENT_INVALID"
+	ResumeImportParseFailed              Code = "RESUME_IMPORT_PARSE_FAILED"
+	ResumeImportEmptyFile                Code = "RESUME_IMPORT_EMPTY_FILE"
+	ResumeDeleteDenied                   Code = "RESUME_DELETE_DENIED"
+	JobNotFound                          Code = "JOB_NOT_FOUND"
+	JobAccessDenied                      Code = "JOB_ACCESS_DENIED"
+	ValidationFailed                     Code = "VALIDATION_FAILED"
+	Internal                             Code = "INTERNAL_ERROR"
 )
 
 type Problem struct {
@@ -125,11 +135,11 @@ func statusForCode(code Code) int {
 		return http.StatusServiceUnavailable
 	case AuthW3Timeout:
 		return http.StatusGatewayTimeout
-	case PermissionDenied:
+	case PermissionDenied, ResumeDeleteDenied, JobAccessDenied:
 		return http.StatusForbidden
-	case IAMPermissionNotFound, IAMPrincipalNotFound:
+	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound:
 		return http.StatusNotFound
-	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported:
+	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -174,6 +184,26 @@ func defaultMessage(code Code) string {
 		return "权限主体不存在"
 	case IAMScopeUnsupported:
 		return "该角色不支持系统级数据范围"
+	case ResumeNotFound:
+		return "简历不存在"
+	case ResumeImportFileTooLarge:
+		return "简历文件不能超过 10MB"
+	case ResumeImportUnsupportedType:
+		return "仅支持 PDF 简历文件"
+	case ResumeImportTargetDepartmentRequired:
+		return "请选择导入目标部门"
+	case ResumeImportTargetDepartmentInvalid:
+		return "无权导入到该部门"
+	case ResumeImportParseFailed:
+		return "简历解析失败"
+	case ResumeImportEmptyFile:
+		return "简历文件为空"
+	case ResumeDeleteDenied:
+		return "无权删除该简历"
+	case JobNotFound:
+		return "任务不存在"
+	case JobAccessDenied:
+		return "无权查看该任务"
 	case ValidationFailed:
 		return "请求参数不合法"
 	default:
