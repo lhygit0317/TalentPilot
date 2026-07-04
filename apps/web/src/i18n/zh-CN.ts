@@ -117,6 +117,14 @@ export const zhCN = {
   },
   departmentPosition: {
     actions: {
+      cancel: "取消",
+      createDepartment: "新增部门",
+      createPosition: "新增岗位",
+      delete: "删除",
+      edit: "编辑",
+      off: "下架",
+      on: "上架",
+      save: "保存",
       view: "查看",
     },
     common: {
@@ -132,6 +140,9 @@ export const zhCN = {
       },
       detailLabel: "部门详情",
       positions: "关联岗位",
+      form: {
+        name: "部门名称",
+      },
     },
     empty: {
       departments: "暂无部门",
@@ -142,8 +153,20 @@ export const zhCN = {
     errors: {
       departmentDetail: "部门详情加载失败，请稍后重试。",
       departments: "部门列表加载失败，请稍后重试。",
+      generic: "操作失败，请稍后重试。",
       positionDetail: "岗位详情加载失败，请稍后重试。",
       positions: "岗位列表加载失败，请稍后重试。",
+      codes: {
+        DEPARTMENT_DELETE_FAILED: "删除部门失败，请稍后重试。",
+        DEPARTMENT_DELETE_HAS_RELATIONS: "部门仍有关联数据，不能删除",
+        DEPARTMENT_NAME_REQUIRED: "部门名称不能为空",
+        POSITION_DELETE_FAILED: "删除岗位失败，请稍后重试。",
+        POSITION_DELETE_HAS_HISTORY: "岗位已有解析或推荐历史，请使用下架",
+        POSITION_DUPLICATE_IMPLICIT_TAG: "隐性标签不能重复",
+        POSITION_DUPLICATE_KEYWORD: "岗位关键词不能重复",
+        POSITION_INVALID_IMPLICIT_WEIGHT: "隐性标签权重不合法",
+        POSITION_SAVE_FAILED: "保存岗位失败，请稍后重试。",
+      },
     },
     filters: {
       allChannels: "全部渠道",
@@ -166,6 +189,17 @@ export const zhCN = {
         status: "状态",
       },
       detailLabel: "岗位详情",
+      form: {
+        channel: "渠道",
+        department: "所属部门",
+        duties: "岗位职责",
+        implicitTags: "隐性标签",
+        keywords: "匹配关键词",
+        level: "职级",
+        must: "硬性要求",
+        name: "岗位名称",
+        status: "状态",
+      },
       sections: {
         duties: "岗位职责",
         implicitTags: "隐性标签",
@@ -181,6 +215,16 @@ export const zhCN = {
     tabs: {
       departments: "部门管理",
       positions: "岗位管理",
+    },
+    toasts: {
+      departmentCreated: "已新增部门",
+      departmentDeleted: "已删除部门",
+      departmentUpdated: "已更新部门",
+      positionCreated: "已新增岗位",
+      positionDeleted: "已删除岗位",
+      positionOff: "岗位已下架",
+      positionOn: "岗位已上架",
+      positionUpdated: "已更新岗位",
     },
     title: "部门与岗位",
   },

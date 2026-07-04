@@ -117,6 +117,14 @@ export const enUS = {
   },
   departmentPosition: {
     actions: {
+      cancel: "Cancel",
+      createDepartment: "New department",
+      createPosition: "New position",
+      delete: "Delete",
+      edit: "Edit",
+      off: "Take off",
+      on: "Put on",
+      save: "Save",
       view: "View",
     },
     common: {
@@ -131,6 +139,9 @@ export const enUS = {
         resumeCount: "Resumes",
       },
       detailLabel: "Department detail",
+      form: {
+        name: "Department name",
+      },
       positions: "Positions",
     },
     empty: {
@@ -142,8 +153,20 @@ export const enUS = {
     errors: {
       departmentDetail: "Failed to load department detail. Try again later.",
       departments: "Failed to load departments. Try again later.",
+      generic: "Operation failed. Try again later.",
       positionDetail: "Failed to load position detail. Try again later.",
       positions: "Failed to load positions. Try again later.",
+      codes: {
+        DEPARTMENT_DELETE_FAILED: "Failed to delete the department. Try again later.",
+        DEPARTMENT_DELETE_HAS_RELATIONS: "Department still has related data and cannot be deleted.",
+        DEPARTMENT_NAME_REQUIRED: "Department name is required.",
+        POSITION_DELETE_FAILED: "Failed to delete the position. Try again later.",
+        POSITION_DELETE_HAS_HISTORY: "This position has parsing or recommendation history. Take it off instead.",
+        POSITION_DUPLICATE_IMPLICIT_TAG: "Implicit tags must not repeat.",
+        POSITION_DUPLICATE_KEYWORD: "Position keywords must not repeat.",
+        POSITION_INVALID_IMPLICIT_WEIGHT: "Implicit tag weight is invalid.",
+        POSITION_SAVE_FAILED: "Failed to save the position. Try again later.",
+      },
     },
     filters: {
       allChannels: "All channels",
@@ -166,6 +189,17 @@ export const enUS = {
         status: "Status",
       },
       detailLabel: "Position detail",
+      form: {
+        channel: "Channel",
+        department: "Department",
+        duties: "Duties",
+        implicitTags: "Implicit tags",
+        keywords: "Keywords",
+        level: "Level",
+        must: "Must-have",
+        name: "Position name",
+        status: "Status",
+      },
       sections: {
         duties: "Duties",
         implicitTags: "Implicit tags",
@@ -181,6 +215,16 @@ export const enUS = {
     tabs: {
       departments: "Departments",
       positions: "Positions",
+    },
+    toasts: {
+      departmentCreated: "Department created",
+      departmentDeleted: "Department deleted",
+      departmentUpdated: "Department updated",
+      positionCreated: "Position created",
+      positionDeleted: "Position deleted",
+      positionOff: "Position taken off",
+      positionOn: "Position put on",
+      positionUpdated: "Position updated",
     },
     title: "Departments and positions",
   },
