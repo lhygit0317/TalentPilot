@@ -44,7 +44,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 | IAM | Permission model foundation | In Progress | `docs/specs/002-iam-permission-model.md` and `docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md` drafted: runtime IAM core, preset roles, Permission whitelist, RoleRelation expansion, data-scope predicates, `/me` additions, errors, audit, cache invalidation, and tests. | Execute implementation plan after approval. |
 | E2 | Resume parsing | Not Started | Resume library, positions, matching, jobs | `005-resume-parse-workspace.md` |
 | E3 | Resume recommendation and routing | Not Started | IAM, resumes, positions, notifications | `006-resume-recommendation-notification.md` |
-| E4 | Resume library | In Progress | `docs/specs/003-resume-library-import.md` drafted; IAM runtime remains a prerequisite for implementation. | Review E4 SPEC, then write implementation plan after IAM runtime is ready. |
+| E4 | Resume library | In Progress | `docs/specs/003-resume-library-import.md` drafted; `docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md` drafted; IAM runtime remains a prerequisite for implementation. | Implement IAM first, then execute E4 implementation plan. |
 | E5 | Department and position management | Not Started | IAM, departments, positions | `004-position-department-management.md` |
 | E6 | User and role management | Not Started | IAM, user list, role list | `007-user-role-management.md` |
 | E7 | Notifications | Not Started | Recommendation events, notification service | `006-resume-recommendation-notification.md` |
@@ -53,5 +53,5 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 ## Current Recommended Order
 
 1. Implement IAM permission model with Subagent-Driven execution.
-2. Review `docs/specs/003-resume-library-import.md`.
-3. Write the E4 implementation plan after IAM permissions are in place.
+2. Execute `docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md`.
+3. Plan E5/E2 after E4 is implemented and verified.
