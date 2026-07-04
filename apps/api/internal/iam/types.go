@@ -7,6 +7,7 @@ var (
 	ErrInvalidAction             = errors.New("iam invalid action")
 	ErrInvalidAttributeCondition = errors.New("iam invalid attribute condition")
 	ErrPermissionNotFound        = errors.New("iam permission not found")
+	ErrPrincipalNotFound         = errors.New("iam principal not found")
 	ErrRoleRelationCycle         = errors.New("iam role relation cycle")
 	ErrRoleRelationDepthExceeded = errors.New("iam role relation depth exceeded")
 	ErrScopeUnsupported          = errors.New("iam scope unsupported")
@@ -16,9 +17,9 @@ type Resource string
 type Action string
 
 type AttributeConditions struct {
-	Channels []string
-	Expired  []bool
-	Self     bool
+	Channels []string `json:"chan,omitempty"`
+	Expired  []bool   `json:"expired,omitempty"`
+	Self     bool     `json:"self,omitempty"`
 }
 
 type PermissionGrant struct {
