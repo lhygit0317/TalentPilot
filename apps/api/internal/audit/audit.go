@@ -16,19 +16,28 @@ const (
 	EventPermissionsReplaced       EventType = "iam.permissions_replaced"
 	EventRoleRelationCreated       EventType = "iam.role_relation_created"
 	EventRoleRelationDeleted       EventType = "iam.role_relation_deleted"
+	EventResumeImportSucceeded     EventType = "resume.import_succeeded"
+	EventResumeImportFailed        EventType = "resume.import_failed"
+	EventResumeDeleted             EventType = "resume.deleted"
 )
 
 type Event struct {
-	Type     EventType
-	UserID   string
-	Account  string
-	Code     string
-	Resource string
-	Action   string
-	TargetID string
-	Result   string
-	Details  map[string]any
-	At       time.Time
+	Type             EventType
+	UserID           string
+	Account          string
+	Code             string
+	RequestID        string
+	ActorUserID      string
+	ActorEmployeeID  string
+	ActorRoleSummary string
+	Resource         string
+	Action           string
+	TargetID         string
+	Result           string
+	Details          map[string]any
+	Before           map[string]any
+	After            map[string]any
+	At               time.Time
 }
 
 type Recorder interface {

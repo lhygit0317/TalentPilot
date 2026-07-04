@@ -1,6 +1,7 @@
 package resume
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -87,4 +88,87 @@ type Profile struct {
 	Skills         []string
 	Certificates   []string
 	RawTextRef     string
+}
+
+type ParseInput struct {
+	FileName    string
+	ContentType string
+	Bytes       []byte
+}
+
+type ParsedResume struct {
+	NormalizedName string
+	Name           string
+	School         string
+	Pos            string
+	Age            *int
+	YearsExp       *float64
+	Keywords       []string
+	Traits         []string
+	ExpBase        int
+	Profile        Profile
+}
+
+type Parser interface {
+	Parse(context.Context, ParseInput) (ParsedResume, error)
+}
+
+type ImportFile struct {
+	FileName    string
+	ContentType string
+	Bytes       []byte
+}
+
+type ImportInput struct {
+	UserID             string
+	UserName           string
+	Channel            Channel
+	TargetDepartmentID string
+	DataScope          iam.DataScope
+	File               ImportFile
+}
+
+type BatchImportInput struct {
+	UserID             string
+	UserName           string
+	Channel            Channel
+	TargetDepartmentID string
+	DataScope          iam.DataScope
+	Files              []ImportFile
+}
+
+type JobSummary struct {
+	Total     int `json:"total"`
+	Succeeded int `json:"succeeded"`
+	Failed    int `json:"failed"`
+}
+
+type JobResult struct {
+	FileName  string `json:"fileName"`
+	Status    string `json:"status"`
+	ResumeID  string `json:"resumeId,omitempty"`
+	Name      string `json:"name,omitempty"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
+type JobStatus struct {
+	ID      string      `json:"id"`
+	Type    string      `json:"type"`
+	Status  string      `json:"status"`
+	Summary JobSummary  `json:"summary"`
+	Results []JobResult `json:"results"`
+}
+
+type ImportJobInput struct {
+	Channel            Channel
+	TargetDepartmentID string
+	FileNames          []string
+}
+
+type CreateImportedResumeInput struct {
+	UserID             string
+	Channel            Channel
+	TargetDepartmentID string
+	SourceBy           string
+	Parsed             ParsedResume
 }

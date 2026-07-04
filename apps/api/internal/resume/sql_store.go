@@ -2,7 +2,10 @@ package resume
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -97,6 +100,126 @@ func (s *SQLStore) Delete(ctx context.Context, id string, scope iam.ScopePredica
 		return err
 	}
 	return s.db.WithContext(ctx).Exec("DELETE FROM resumes WHERE id = ?", id).Error
+}
+
+func (s *SQLStore) CreateImportJob(ctx context.Context, ownerUserID string, batch bool, input ImportJobInput) (string, error) {
+	jobID := newID("job")
+	summary, err := json.Marshal(map[string]any{
+		"batch":              batch,
+		"chan":               input.Channel,
+		"targetDepartmentId": input.TargetDepartmentID,
+		"fileNames":          input.FileNames,
+	})
+	if err != nil {
+		return "", err
+	}
+	if err := s.db.WithContext(ctx).Exec(`
+		INSERT INTO jobs (id, type, status, input_summary, request_id, created_by_user_id, created_at, updated_at)
+		VALUES (?, ?, 'pending', ?, '', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`, jobID, jobTypeResumeImport, string(summary), ownerUserID).Error; err != nil {
+		return "", err
+	}
+	return jobID, nil
+}
+
+func (s *SQLStore) MarkImportJobSucceeded(ctx context.Context, jobID string, result JobStatus) error {
+	raw, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	return s.db.WithContext(ctx).Exec(`
+		UPDATE jobs
+		SET status = 'succeeded', result_json = ?, error_code = '', error_message = '', updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, string(raw), jobID).Error
+}
+
+func (s *SQLStore) MarkImportJobFailed(ctx context.Context, jobID string, code string, result JobStatus) error {
+	raw, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	return s.db.WithContext(ctx).Exec(`
+		UPDATE jobs
+		SET status = 'failed', result_json = ?, error_code = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, string(raw), code, jobID).Error
+}
+
+func (s *SQLStore) GetJob(ctx context.Context, jobID string, ownerUserID string) (JobStatus, error) {
+	var row struct {
+		ID              string
+		Type            string
+		Status          string
+		CreatedByUserID string `gorm:"column:created_by_user_id"`
+		ResultJSON      string `gorm:"column:result_json"`
+	}
+	if err := s.db.WithContext(ctx).Raw(`
+		SELECT id, type, status, created_by_user_id, result_json
+		FROM jobs
+		WHERE id = ?
+	`, jobID).Scan(&row).Error; err != nil {
+		return JobStatus{}, err
+	}
+	if row.ID == "" {
+		return JobStatus{}, ErrJobNotFound
+	}
+	if row.CreatedByUserID != ownerUserID {
+		return JobStatus{}, ErrJobAccessDenied
+	}
+	if row.ResultJSON == "" || row.ResultJSON == "{}" {
+		return JobStatus{ID: row.ID, Type: row.Type, Status: row.Status, Results: []JobResult{}}, nil
+	}
+	var status JobStatus
+	if err := json.Unmarshal([]byte(row.ResultJSON), &status); err != nil {
+		return JobStatus{}, err
+	}
+	if status.ID == "" {
+		status.ID = row.ID
+	}
+	if status.Type == "" {
+		status.Type = row.Type
+	}
+	if status.Status == "" {
+		status.Status = row.Status
+	}
+	return status, nil
+}
+
+func (s *SQLStore) CreateImportedResume(ctx context.Context, input CreateImportedResumeInput) (string, error) {
+	resumeID := newID("resume")
+	keywords, err := json.Marshal(input.Parsed.Keywords)
+	if err != nil {
+		return "", err
+	}
+	traits, err := json.Marshal(input.Parsed.Traits)
+	if err != nil {
+		return "", err
+	}
+	profile, err := json.Marshal(input.Parsed.Profile)
+	if err != nil {
+		return "", err
+	}
+	expBase := input.Parsed.ExpBase
+	if expBase == 0 {
+		expBase = 60
+	}
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec(`
+			INSERT INTO resumes (id, normalized_name, name, age, school, years_exp, pos, source, source_by, chan, keywords, traits, exp_base, profile, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		`, resumeID, input.Parsed.NormalizedName, input.Parsed.Name, input.Parsed.Age, input.Parsed.School, input.Parsed.YearsExp, input.Parsed.Pos, SourceImported, input.SourceBy, input.Channel, string(keywords), string(traits), expBase, string(profile)).Error; err != nil {
+			return err
+		}
+		return tx.Exec(`
+			INSERT INTO department_resumes (id, department_id, resume_id, assigned_at, by_user_id)
+			VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)
+		`, newID("department_resume"), input.TargetDepartmentID, resumeID, input.UserID).Error
+	})
+	if err != nil {
+		return "", err
+	}
+	return resumeID, nil
 }
 
 func (s *SQLStore) channelCounts(ctx context.Context, scope iam.ScopePredicate) (map[Channel]int, error) {
@@ -346,4 +469,12 @@ func decodeProfile(raw string) (Profile, error) {
 		profile.Certificates = []string{}
 	}
 	return profile, nil
+}
+
+func newID(prefix string) string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return prefix + "_" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	}
+	return prefix + "_" + hex.EncodeToString(b[:])
 }
