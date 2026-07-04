@@ -16,7 +16,7 @@ const (
 type Store interface {
 	List(context.Context, ListQuery) (ListResult, error)
 	Get(context.Context, string, iam.ScopePredicate) (Detail, error)
-	Delete(context.Context, string, iam.ScopePredicate) error
+	Delete(context.Context, string, iam.ScopePredicate, iam.ScopePredicate) error
 	CreateImportJob(context.Context, string, bool, ImportJobInput) (string, error)
 	MarkImportJobSucceeded(context.Context, string, JobStatus) error
 	MarkImportJobFailed(context.Context, string, string, JobStatus) error
@@ -48,8 +48,8 @@ func (s *Service) Get(ctx context.Context, id string, scope iam.ScopePredicate) 
 	return s.store.Get(ctx, id, scope)
 }
 
-func (s *Service) Delete(ctx context.Context, id string, scope iam.ScopePredicate) error {
-	if err := s.store.Delete(ctx, id, scope); err != nil {
+func (s *Service) Delete(ctx context.Context, id string, resumeScope iam.ScopePredicate, departmentResumeScope iam.ScopePredicate) error {
+	if err := s.store.Delete(ctx, id, resumeScope, departmentResumeScope); err != nil {
 		return err
 	}
 	s.recordAudit(ctx, audit.Event{
@@ -71,6 +71,10 @@ func (s *Service) ImportOne(ctx context.Context, input ImportInput) (JobStatus, 
 	targetDepartmentID, err := resolveTargetDepartment(input.TargetDepartmentID, input.DataScope)
 	if err != nil {
 		return JobStatus{}, err
+	}
+	if !canCreateResumeInTarget(input.ResumeCreateScope, targetDepartmentID, input.Channel) ||
+		!canCreateDepartmentResumeInTarget(input.DepartmentResumeCreateScope, targetDepartmentID) {
+		return JobStatus{}, ErrImportScopeDenied
 	}
 	jobID, err := s.store.CreateImportJob(ctx, input.UserID, false, ImportJobInput{
 		Channel:            input.Channel,
@@ -129,6 +133,10 @@ func (s *Service) ImportBatch(ctx context.Context, input BatchImportInput) (JobS
 	targetDepartmentID, err := resolveTargetDepartment(input.TargetDepartmentID, input.DataScope)
 	if err != nil {
 		return JobStatus{}, err
+	}
+	if !canCreateResumeInTarget(input.ResumeCreateScope, targetDepartmentID, input.Channel) ||
+		!canCreateDepartmentResumeInTarget(input.DepartmentResumeCreateScope, targetDepartmentID) {
+		return JobStatus{}, ErrImportScopeDenied
 	}
 	fileNames := make([]string, 0, len(input.Files))
 	for _, file := range input.Files {
@@ -224,6 +232,27 @@ func nonSystemDepartmentIDs(departments []iam.DepartmentScope) []string {
 		}
 	}
 	return ids
+}
+
+func canCreateResumeInTarget(scope iam.ScopePredicate, departmentID string, channel Channel) bool {
+	return scopeAllowsImportTarget(scope, departmentID, string(channel))
+}
+
+func canCreateDepartmentResumeInTarget(scope iam.ScopePredicate, departmentID string) bool {
+	return scopeAllowsImportTarget(scope, departmentID, "")
+}
+
+func scopeAllowsImportTarget(scope iam.ScopePredicate, departmentID string, channel string) bool {
+	for _, branch := range scope.Branches {
+		if !branch.AllDepartments && !containsString(branch.DepartmentIDs, departmentID) {
+			continue
+		}
+		if channel != "" && len(branch.Channels) > 0 && !containsString(branch.Channels, channel) {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 func succeededJob(jobID string, results []JobResult) JobStatus {

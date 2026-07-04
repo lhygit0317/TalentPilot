@@ -47,7 +47,7 @@ type IAMService interface {
 type ResumeService interface {
 	List(context.Context, resume.ListQuery) (resume.ListResult, error)
 	Get(context.Context, string, iam.ScopePredicate) (resume.Detail, error)
-	Delete(context.Context, string, iam.ScopePredicate) error
+	Delete(context.Context, string, iam.ScopePredicate, iam.ScopePredicate) error
 	ImportOne(context.Context, resume.ImportInput) (resume.JobStatus, error)
 	ImportBatch(context.Context, resume.BatchImportInput) (resume.JobStatus, error)
 	GetJob(context.Context, string, string) (resume.JobStatus, error)

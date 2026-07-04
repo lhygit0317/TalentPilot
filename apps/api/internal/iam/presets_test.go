@@ -11,8 +11,11 @@ func TestPresetRoleMatrixMatchesSpec(t *testing.T) {
 	matrix := iam.PresetRolePermissions()
 	assertGrant(t, matrix, iam.RoleGuest, iam.ResourceUser, iam.ActionGet, iam.AttributeConditions{Self: true})
 	assertGrant(t, matrix, iam.RoleHRBP, iam.ResourceResume, iam.ActionDelete, iam.AttributeConditions{})
+	assertGrant(t, matrix, iam.RoleHRBP, iam.ResourceDepartmentResume, iam.ActionDelete, iam.AttributeConditions{})
 	assertGrant(t, matrix, iam.RoleSocialOwner, iam.ResourceResume, iam.ActionList, iam.AttributeConditions{Channels: []string{"social"}})
+	assertGrant(t, matrix, iam.RoleSocialOwner, iam.ResourceDepartmentResume, iam.ActionDelete, iam.AttributeConditions{})
 	assertGrant(t, matrix, iam.RoleCampusOwner, iam.ResourceResume, iam.ActionList, iam.AttributeConditions{Channels: []string{"campus"}})
+	assertGrant(t, matrix, iam.RoleCampusOwner, iam.ResourceDepartmentResume, iam.ActionDelete, iam.AttributeConditions{})
 	assertGrant(t, matrix, iam.RoleSuperAdmin, iam.ResourcePosition, iam.ActionDelete, iam.AttributeConditions{})
 }
 

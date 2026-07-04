@@ -22,7 +22,14 @@ func TestServiceSingleImportInfersOnlyConcreteDepartment(t *testing.T) {
 		UserID:    "user_owner",
 		Channel:   resume.ChannelSocial,
 		DataScope: iam.DataScope{Departments: []iam.DepartmentScope{{ID: "dept_a", Name: "算力训练平台部"}}},
-		File:      pdfFile("zhaoliu.pdf"),
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+			Channels:      []string{"social"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+		}),
+		File: pdfFile("zhaoliu.pdf"),
 	})
 	if err != nil {
 		t.Fatalf("import one: %v", err)
@@ -55,6 +62,35 @@ func TestServiceSingleImportRequiresTargetForMultipleDepartments(t *testing.T) {
 	}
 }
 
+func TestServiceSingleImportRejectsTargetOutsideCreateScopesBeforeParser(t *testing.T) {
+	parser := &fakeParser{}
+	service := resume.NewService(resume.NewSQLStore(newResumeMigratedSQLiteGormDB(t)), parser, audit.NopRecorder{})
+
+	_, err := service.ImportOne(context.Background(), resume.ImportInput{
+		UserID:             "user_owner",
+		Channel:            resume.ChannelSocial,
+		TargetDepartmentID: "dept_b",
+		DataScope: iam.DataScope{Departments: []iam.DepartmentScope{
+			{ID: "dept_a", Name: "算力训练平台部"},
+			{ID: "dept_b", Name: "智算调度部"},
+		}},
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+			Channels:      []string{"social"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+		}),
+		File: pdfFile("outside.pdf"),
+	})
+	if !errors.Is(err, resume.ErrImportScopeDenied) {
+		t.Fatalf("expected create scope denial, got %v", err)
+	}
+	if parser.calls != 0 {
+		t.Fatalf("expected scope validation before parser, calls=%d", parser.calls)
+	}
+}
+
 func TestServiceSingleImportRejectsInvalidFileBeforeParser(t *testing.T) {
 	parser := &fakeParser{}
 	service := resume.NewService(resume.NewSQLStore(newResumeMigratedSQLiteGormDB(t)), parser, audit.NopRecorder{})
@@ -63,7 +99,14 @@ func TestServiceSingleImportRejectsInvalidFileBeforeParser(t *testing.T) {
 		UserID:    "user_owner",
 		Channel:   resume.ChannelSocial,
 		DataScope: iam.DataScope{Departments: []iam.DepartmentScope{{ID: "dept_a", Name: "算力训练平台部"}}},
-		File:      resume.ImportFile{FileName: "resume.txt", ContentType: "text/plain", Bytes: []byte("not a pdf")},
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+			Channels:      []string{"social"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+		}),
+		File: resume.ImportFile{FileName: "resume.txt", ContentType: "text/plain", Bytes: []byte("not a pdf")},
 	})
 	if !errors.Is(err, resume.ErrUnsupportedFileType) {
 		t.Fatalf("expected unsupported file type, got %v", err)
@@ -84,7 +127,14 @@ func TestServiceSingleImportCreatesResumeAndDepartmentResumeInTransaction(t *tes
 		Channel:            resume.ChannelCampus,
 		TargetDepartmentID: "dept_b",
 		DataScope:          iam.DataScope{AllDepartments: true},
-		File:               pdfFile("qianqi.pdf"),
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+			Channels:       []string{"campus"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+		}),
+		File: pdfFile("qianqi.pdf"),
 	})
 	if err != nil {
 		t.Fatalf("import one: %v", err)
@@ -108,7 +158,14 @@ func TestServiceParseFailureCreatesNoResumeOwnershipRowsAndMarksJobFailed(t *tes
 		Channel:            resume.ChannelSocial,
 		TargetDepartmentID: "dept_a",
 		DataScope:          iam.DataScope{AllDepartments: true},
-		File:               pdfFile("bad.pdf"),
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+			Channels:       []string{"social"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+		}),
+		File: pdfFile("bad.pdf"),
 	})
 	if !errors.Is(err, resume.ErrParseFailed) {
 		t.Fatalf("expected parse error, got %v", err)
@@ -134,7 +191,14 @@ func TestServiceBatchImportRecordsPerFileResults(t *testing.T) {
 		Channel:            resume.ChannelSocial,
 		TargetDepartmentID: "dept_a",
 		DataScope:          iam.DataScope{AllDepartments: true},
-		Files:              []resume.ImportFile{pdfFile("sunba.pdf"), pdfFile("failed.pdf")},
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+			Channels:       []string{"social"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+		}),
+		Files: []resume.ImportFile{pdfFile("sunba.pdf"), pdfFile("failed.pdf")},
 	})
 	if err != nil {
 		t.Fatalf("batch import should preserve per-file failures without failing request: %v", err)
@@ -156,7 +220,14 @@ func TestServiceGetJobRejectsDifferentOwner(t *testing.T) {
 		Channel:            resume.ChannelSocial,
 		TargetDepartmentID: "dept_a",
 		DataScope:          iam.DataScope{AllDepartments: true},
-		File:               pdfFile("zhoujiu.pdf"),
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+			Channels:       []string{"social"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+		}),
+		File: pdfFile("zhoujiu.pdf"),
 	})
 	if err != nil {
 		t.Fatalf("import one: %v", err)
@@ -179,11 +250,23 @@ func TestServiceWritesAuditForImportAndDeleteWithoutSensitivePayloads(t *testing
 		Channel:            resume.ChannelSocial,
 		TargetDepartmentID: "dept_a",
 		DataScope:          iam.DataScope{AllDepartments: true},
-		File:               pdfFile("wushi.pdf"),
+		ResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+			Channels:       []string{"social"},
+		}),
+		DepartmentResumeCreateScope: scopeFor(iam.ActionCreate, iam.ScopeBranch{
+			AllDepartments: true,
+		}),
+		File: pdfFile("wushi.pdf"),
 	}); err != nil {
 		t.Fatalf("import one: %v", err)
 	}
-	if err := service.Delete(context.Background(), "resume_social_a", scopeFor(iam.ActionDelete, iam.ScopeBranch{DepartmentIDs: []string{"dept_a"}, Channels: []string{"social"}})); err != nil {
+	if err := service.Delete(
+		context.Background(),
+		"resume_social_a",
+		scopeFor(iam.ActionDelete, iam.ScopeBranch{DepartmentIDs: []string{"dept_a"}, Channels: []string{"social"}}),
+		scopeFor(iam.ActionDelete, iam.ScopeBranch{DepartmentIDs: []string{"dept_a"}}),
+	); err != nil {
 		t.Fatalf("delete resume: %v", err)
 	}
 

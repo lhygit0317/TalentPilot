@@ -66,6 +66,7 @@ func businessOwnerGrants(roleID string, resumeConditions AttributeConditions) []
 		grant(roleID, ResourcePosition, ActionList),
 		grant(roleID, ResourcePosition, ActionGet),
 		grant(roleID, ResourceDepartmentResume, ActionCreate),
+		grant(roleID, ResourceDepartmentResume, ActionDelete),
 		grant(roleID, ResourcePositionResume, ActionCreate),
 		grant(roleID, ResourceNotification, ActionList),
 		grant(roleID, ResourceNotification, ActionGet),

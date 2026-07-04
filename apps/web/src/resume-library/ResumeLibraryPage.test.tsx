@@ -28,6 +28,17 @@ const importSession = {
   permissions: ["Resume.List", "Resume.Get", "Resume.Create", "DepartmentResume.Create", "Resume.Delete"],
 };
 
+const multiDepartmentImportSession = {
+  ...importSession,
+  dataScope: {
+    ...importSession.dataScope,
+    departments: [
+      { id: "dept_a", name: "算力训练平台部" },
+      { id: "dept_b", name: "智算调度部" },
+    ],
+  },
+};
+
 const listResponse = {
   availableChannels: ["social", "campus"],
   channelCounts: { social: 2, campus: 1 },
@@ -177,6 +188,23 @@ describe("ResumeLibraryPage", () => {
     expect(body.get("targetDepartmentId")).toBe("dept_a");
     expect(apiMocks.getJob).toHaveBeenCalledWith("job_1");
     expect(await screen.findByRole("status")).toHaveTextContent("✓ 已导入「张三」并加入简历库");
+  });
+
+  it("requires an explicit import target when multiple departments are available", async () => {
+    const user = userEvent.setup();
+    render(<ResumeLibraryPage session={multiDepartmentImportSession} />);
+
+    const file = new File(["%PDF-1.7"], "zhangsan.pdf", { type: "application/pdf" });
+    await user.upload(await screen.findByLabelText("单份导入"), file);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("请选择导入目标部门");
+    expect(apiMocks.importResume).not.toHaveBeenCalled();
+
+    await user.selectOptions(await screen.findByLabelText("导入目标部门"), "dept_b");
+    await user.upload(await screen.findByLabelText("单份导入"), file);
+
+    const body = apiMocks.importResume.mock.calls[0][0] as FormData;
+    expect(body.get("targetDepartmentId")).toBe("dept_b");
   });
 
   it("submits batch import form data and shows success count toast", async () => {

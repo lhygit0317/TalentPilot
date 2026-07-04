@@ -1,8 +1,10 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -100,6 +102,145 @@ func TestResumeImportRequiresCSRFAndCreatePermissions(t *testing.T) {
 	assertErrorCode(t, rec.Body.String(), "AUTH_CSRF_INVALID")
 }
 
+func TestResumeImportRejectsChannelOutsideCreateScope(t *testing.T) {
+	resumeSvc := &fakeResumeService{}
+	server := NewServerWithOptions(Options{
+		AuthService: newFakeHTTPAuthService(),
+		IAMService: &fakeIAMService{
+			decision: iam.Decision{Allowed: true},
+			scopes: map[string]iam.ScopePredicate{
+				iam.PermissionKey(iam.ResourceResume, iam.ActionCreate): {
+					Resource: iam.ResourceResume,
+					Action:   iam.ActionCreate,
+					Branches: []iam.ScopeBranch{{
+						AllDepartments: true,
+						Channels:       []string{"social"},
+					}},
+				},
+				iam.PermissionKey(iam.ResourceDepartmentResume, iam.ActionCreate): {
+					Resource: iam.ResourceDepartmentResume,
+					Action:   iam.ActionCreate,
+					Branches: []iam.ScopeBranch{{
+						AllDepartments: true,
+					}},
+				},
+			},
+			principal: iam.Principal{
+				User:      iam.User{ID: "w3_1", Name: "张三"},
+				DataScope: iam.DataScope{AllDepartments: true},
+			},
+		},
+		ResumeService: resumeSvc,
+	})
+	body, contentType := multipartResumeBody(t, map[string]string{
+		"chan":               "campus",
+		"targetDepartmentId": "dept_a",
+	}, "file", []string{"campus.pdf"})
+	req := httptest.NewRequest(http.MethodPost, "/resumes/imports", body)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("X-CSRF-Token", "csrf_before")
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	req.AddCookie(&http.Cookie{Name: "tp_csrf", Value: "csrf_before"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	assertErrorCode(t, rec.Body.String(), "IAM_PERMISSION_DENIED")
+	if resumeSvc.importOneCalls != 0 {
+		t.Fatalf("expected channel scope denial before import service, calls=%d", resumeSvc.importOneCalls)
+	}
+}
+
+func TestResumeImportPassesCreateScopesToService(t *testing.T) {
+	resumeSvc := &fakeResumeService{}
+	server := NewServerWithOptions(Options{
+		AuthService: newFakeHTTPAuthService(),
+		IAMService: &fakeIAMService{
+			decision: iam.Decision{Allowed: true},
+			scopes: map[string]iam.ScopePredicate{
+				iam.PermissionKey(iam.ResourceResume, iam.ActionCreate): {
+					Resource: iam.ResourceResume,
+					Action:   iam.ActionCreate,
+					Branches: []iam.ScopeBranch{{
+						DepartmentIDs: []string{"dept_a"},
+						Channels:      []string{"social"},
+					}},
+				},
+				iam.PermissionKey(iam.ResourceDepartmentResume, iam.ActionCreate): {
+					Resource: iam.ResourceDepartmentResume,
+					Action:   iam.ActionCreate,
+					Branches: []iam.ScopeBranch{{
+						DepartmentIDs: []string{"dept_a"},
+					}},
+				},
+			},
+			principal: iam.Principal{
+				User: iam.User{ID: "w3_1", Name: "张三"},
+				DataScope: iam.DataScope{Departments: []iam.DepartmentScope{
+					{ID: "dept_a", Name: "算力训练平台部"},
+				}},
+			},
+		},
+		ResumeService: resumeSvc,
+	})
+	body, contentType := multipartResumeBody(t, map[string]string{
+		"chan":               "social",
+		"targetDepartmentId": "dept_a",
+	}, "file", []string{"social.pdf"})
+	req := httptest.NewRequest(http.MethodPost, "/resumes/imports", body)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("X-CSRF-Token", "csrf_before")
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	req.AddCookie(&http.Cookie{Name: "tp_csrf", Value: "csrf_before"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if len(resumeSvc.importOneInput.ResumeCreateScope.Branches) != 1 || resumeSvc.importOneInput.ResumeCreateScope.Branches[0].DepartmentIDs[0] != "dept_a" {
+		t.Fatalf("expected resume create scope passed to service, got %#v", resumeSvc.importOneInput.ResumeCreateScope)
+	}
+	if len(resumeSvc.importOneInput.DepartmentResumeCreateScope.Branches) != 1 || resumeSvc.importOneInput.DepartmentResumeCreateScope.Branches[0].DepartmentIDs[0] != "dept_a" {
+		t.Fatalf("expected department resume create scope passed to service, got %#v", resumeSvc.importOneInput.DepartmentResumeCreateScope)
+	}
+}
+
+func TestResumeDeleteRequiresDepartmentResumeDeletePermission(t *testing.T) {
+	resumeSvc := &fakeResumeService{}
+	server := NewServerWithOptions(Options{
+		AuthService: newFakeHTTPAuthService(),
+		IAMService: &fakeIAMService{
+			decision: iam.Decision{Allowed: true},
+			decisions: map[string]iam.Decision{
+				iam.PermissionKey(iam.ResourceResume, iam.ActionDelete):           {Allowed: true},
+				iam.PermissionKey(iam.ResourceDepartmentResume, iam.ActionDelete): {Allowed: false},
+			},
+			scope: iam.ScopePredicate{Resource: iam.ResourceResume, Action: iam.ActionDelete, Branches: []iam.ScopeBranch{{AllDepartments: true}}},
+		},
+		ResumeService: resumeSvc,
+	})
+	req := httptest.NewRequest(http.MethodDelete, "/resumes/resume_1", nil)
+	req.Header.Set("X-CSRF-Token", "csrf_before")
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	req.AddCookie(&http.Cookie{Name: "tp_csrf", Value: "csrf_before"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	assertErrorCode(t, rec.Body.String(), "IAM_PERMISSION_DENIED")
+	if resumeSvc.deleteCalls != 0 {
+		t.Fatalf("expected permission denial before delete service, calls=%d", resumeSvc.deleteCalls)
+	}
+}
+
 func TestResumeDeleteMapsStableErrors(t *testing.T) {
 	server := NewServerWithOptions(Options{
 		AuthService: newFakeHTTPAuthService(),
@@ -173,12 +314,15 @@ func TestOpenAPIDocumentIncludesResumeAndJobEndpoints(t *testing.T) {
 }
 
 type fakeResumeService struct {
-	listQuery  ListQueryAlias
-	listResult resume.ListResult
-	getErr     error
-	deleteErr  error
-	jobStatus  resume.JobStatus
-	jobUserID  string
+	listQuery      ListQueryAlias
+	listResult     resume.ListResult
+	getErr         error
+	deleteErr      error
+	deleteCalls    int
+	importOneCalls int
+	importOneInput resume.ImportInput
+	jobStatus      resume.JobStatus
+	jobUserID      string
 }
 
 type ListQueryAlias = resume.ListQuery
@@ -195,11 +339,14 @@ func (f *fakeResumeService) Get(ctx context.Context, id string, scope iam.ScopeP
 	return resume.Detail{ListItem: resume.ListItem{ID: id, Name: "张三"}}, nil
 }
 
-func (f *fakeResumeService) Delete(ctx context.Context, id string, scope iam.ScopePredicate) error {
+func (f *fakeResumeService) Delete(ctx context.Context, id string, resumeScope iam.ScopePredicate, departmentResumeScope iam.ScopePredicate) error {
+	f.deleteCalls++
 	return f.deleteErr
 }
 
 func (f *fakeResumeService) ImportOne(ctx context.Context, input resume.ImportInput) (resume.JobStatus, error) {
+	f.importOneCalls++
+	f.importOneInput = input
 	return resume.JobStatus{ID: "job_import", Type: "resume_import", Status: "pending"}, nil
 }
 
@@ -213,4 +360,29 @@ func (f *fakeResumeService) GetJob(ctx context.Context, jobID string, userID str
 		return resume.JobStatus{ID: jobID, Type: "resume_import", Status: "pending"}, nil
 	}
 	return f.jobStatus, nil
+}
+
+func multipartResumeBody(t *testing.T, fields map[string]string, fileField string, fileNames []string) (*bytes.Buffer, string) {
+	t.Helper()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	for key, value := range fields {
+		if err := writer.WriteField(key, value); err != nil {
+			t.Fatalf("write field %s: %v", key, err)
+		}
+	}
+	for _, fileName := range fileNames {
+		part, err := writer.CreateFormFile(fileField, fileName)
+		if err != nil {
+			t.Fatalf("create form file: %v", err)
+		}
+		if _, err := part.Write([]byte("%PDF-1.7 test")); err != nil {
+			t.Fatalf("write form file: %v", err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+	return body, writer.FormDataContentType()
 }

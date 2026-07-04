@@ -367,7 +367,10 @@ type fakeHTTPAuthService struct {
 type fakeIAMService struct {
 	roleSummary iam.RoleSummary
 	decision    iam.Decision
+	decisions   map[string]iam.Decision
 	scope       iam.ScopePredicate
+	scopes      map[string]iam.ScopePredicate
+	principal   iam.Principal
 }
 
 func (f *fakeIAMService) RoleSummary(ctx context.Context, userID string) (iam.RoleSummary, error) {
@@ -375,14 +378,23 @@ func (f *fakeIAMService) RoleSummary(ctx context.Context, userID string) (iam.Ro
 }
 
 func (f *fakeIAMService) Can(ctx context.Context, principal iam.Principal, resource iam.Resource, action iam.Action, target iam.Target) iam.Decision {
+	if decision, ok := f.decisions[iam.PermissionKey(resource, action)]; ok {
+		return decision
+	}
 	return f.decision
 }
 
 func (f *fakeIAMService) Scope(ctx context.Context, principal iam.Principal, resource iam.Resource, action iam.Action) (iam.ScopePredicate, error) {
+	if scope, ok := f.scopes[iam.PermissionKey(resource, action)]; ok {
+		return scope, nil
+	}
 	return f.scope, nil
 }
 
 func (f *fakeIAMService) ResolvePrincipal(ctx context.Context, userID string) (iam.Principal, error) {
+	if f.principal.User.ID != "" {
+		return f.principal, nil
+	}
 	return iam.Principal{User: iam.User{ID: userID}}, nil
 }
 

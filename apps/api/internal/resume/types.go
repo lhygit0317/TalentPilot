@@ -15,7 +15,9 @@ var (
 	ErrUnsupportedFileType  = errors.New("resume import unsupported file type")
 	ErrFileTooLarge         = errors.New("resume import file too large")
 	ErrEmptyFile            = errors.New("resume import empty file")
+	ErrImportScopeDenied    = errors.New("resume import scope denied")
 	ErrParseFailed          = errors.New("resume import parse failed")
+	ErrDeleteDenied         = errors.New("resume delete denied")
 	ErrJobNotFound          = errors.New("job not found")
 	ErrJobAccessDenied      = errors.New("job access denied")
 )
@@ -120,21 +122,25 @@ type ImportFile struct {
 }
 
 type ImportInput struct {
-	UserID             string
-	UserName           string
-	Channel            Channel
-	TargetDepartmentID string
-	DataScope          iam.DataScope
-	File               ImportFile
+	UserID                      string
+	UserName                    string
+	Channel                     Channel
+	TargetDepartmentID          string
+	DataScope                   iam.DataScope
+	ResumeCreateScope           iam.ScopePredicate
+	DepartmentResumeCreateScope iam.ScopePredicate
+	File                        ImportFile
 }
 
 type BatchImportInput struct {
-	UserID             string
-	UserName           string
-	Channel            Channel
-	TargetDepartmentID string
-	DataScope          iam.DataScope
-	Files              []ImportFile
+	UserID                      string
+	UserName                    string
+	Channel                     Channel
+	TargetDepartmentID          string
+	DataScope                   iam.DataScope
+	ResumeCreateScope           iam.ScopePredicate
+	DepartmentResumeCreateScope iam.ScopePredicate
+	Files                       []ImportFile
 }
 
 type JobSummary struct {

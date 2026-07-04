@@ -27,8 +27,9 @@ func (s *SQLStore) List(ctx context.Context, query ListQuery) (ListResult, error
 		return ListResult{}, err
 	}
 	selectedChannel := query.Channel
+	available := availableChannelsForScope(query.Scope)
 	if selectedChannel == "" {
-		selectedChannel = firstAvailableChannel(counts)
+		selectedChannel = firstAvailableChannel(counts, available)
 	}
 
 	rowsQuery := s.scopedRows(ctx, query.Scope)
@@ -71,18 +72,15 @@ func (s *SQLStore) List(ctx context.Context, query ListQuery) (ListResult, error
 	return ListResult{
 		Items:             items,
 		ChannelCounts:     counts,
-		AvailableChannels: availableChannels(counts),
+		AvailableChannels: available,
 		DataScopeSummary:  dataScopeSummary(query.Scope),
 	}, nil
 }
 
 func (s *SQLStore) Get(ctx context.Context, id string, scope iam.ScopePredicate) (Detail, error) {
-	var row resumeRow
-	if err := s.scopedRows(ctx, scope).Where("resumes.id = ?", id).Limit(1).Scan(&row).Error; err != nil {
+	row, err := s.getScopedRow(ctx, id, scope)
+	if err != nil {
 		return Detail{}, err
-	}
-	if row.ID == "" {
-		return Detail{}, ErrNotFound
 	}
 	item, err := row.listItem()
 	if err != nil {
@@ -95,11 +93,26 @@ func (s *SQLStore) Get(ctx context.Context, id string, scope iam.ScopePredicate)
 	return Detail{ListItem: item, CreatedAt: row.CreatedAt, Expired: row.Expired, Profile: profile}, nil
 }
 
-func (s *SQLStore) Delete(ctx context.Context, id string, scope iam.ScopePredicate) error {
-	if _, err := s.Get(ctx, id, scope); err != nil {
+func (s *SQLStore) Delete(ctx context.Context, id string, resumeScope iam.ScopePredicate, departmentResumeScope iam.ScopePredicate) error {
+	row, err := s.getScopedRow(ctx, id, resumeScope)
+	if err != nil {
 		return err
 	}
+	if !matchesScope(row, departmentResumeScope) {
+		return ErrDeleteDenied
+	}
 	return s.db.WithContext(ctx).Exec("DELETE FROM resumes WHERE id = ?", id).Error
+}
+
+func (s *SQLStore) getScopedRow(ctx context.Context, id string, scope iam.ScopePredicate) (resumeRow, error) {
+	var row resumeRow
+	if err := s.scopedRows(ctx, scope).Where("resumes.id = ?", id).Limit(1).Scan(&row).Error; err != nil {
+		return resumeRow{}, err
+	}
+	if row.ID == "" {
+		return resumeRow{}, ErrNotFound
+	}
+	return row, nil
 }
 
 func (s *SQLStore) CreateImportJob(ctx context.Context, ownerUserID string, batch bool, input ImportJobInput) (string, error) {
@@ -317,23 +330,48 @@ func matchesScope(row resumeRow, scope iam.ScopePredicate) bool {
 	return false
 }
 
-func firstAvailableChannel(counts map[Channel]int) Channel {
+func firstAvailableChannel(counts map[Channel]int, available []Channel) Channel {
 	for _, channel := range []Channel{ChannelSocial, ChannelCampus} {
-		if counts[channel] > 0 {
+		if containsChannel(available, channel) && counts[channel] > 0 {
 			return channel
 		}
+	}
+	if len(available) > 0 {
+		return available[0]
 	}
 	return ""
 }
 
-func availableChannels(counts map[Channel]int) []Channel {
-	var channels []Channel
+func availableChannelsForScope(scope iam.ScopePredicate) []Channel {
+	channelSet := map[Channel]bool{}
+	for _, branch := range scope.Branches {
+		if len(branch.Channels) == 0 {
+			channelSet[ChannelSocial] = true
+			channelSet[ChannelCampus] = true
+			continue
+		}
+		for _, channel := range branch.Channels {
+			if channel == string(ChannelSocial) || channel == string(ChannelCampus) {
+				channelSet[Channel(channel)] = true
+			}
+		}
+	}
+	channels := make([]Channel, 0, len(channelSet))
 	for _, channel := range []Channel{ChannelSocial, ChannelCampus} {
-		if counts[channel] > 0 {
+		if channelSet[channel] {
 			channels = append(channels, channel)
 		}
 	}
 	return channels
+}
+
+func containsChannel(values []Channel, expected Channel) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
 }
 
 func dataScopeSummary(scope iam.ScopePredicate) string {

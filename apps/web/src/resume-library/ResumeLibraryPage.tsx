@@ -3,6 +3,7 @@ import { deleteResume, getJob, getResume, importResume, importResumesBatch, list
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/form";
 import { Input } from "../components/ui/input";
+import { Select } from "../components/ui/select";
 import { zhCN } from "../i18n/zh-CN";
 import { highlightLiteral } from "./highlight";
 import type {
@@ -46,6 +47,7 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
   const [detail, setDetail] = React.useState<ResumeDetail | null>(null);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [successMessage, setSuccessMessage] = React.useState("");
+  const [targetDepartmentId, setTargetDepartmentId] = React.useState("");
 
   const loadResumes = React.useCallback(
     async (isCurrent: () => boolean = () => true) => {
@@ -111,7 +113,14 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
       return;
     }
 
-    const body = buildImportFormData(channel, session);
+    const targetDepartment = resolveImportTargetDepartment(session, targetDepartmentId);
+    if (!targetDepartment) {
+      setErrorMessage(text.errors.targetDepartmentRequired);
+      setSuccessMessage("");
+      return;
+    }
+
+    const body = buildImportFormData(channel, targetDepartment);
     body.append("file", file);
 
     try {
@@ -147,7 +156,14 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
       return;
     }
 
-    const body = buildImportFormData(channel, session);
+    const targetDepartment = resolveImportTargetDepartment(session, targetDepartmentId);
+    if (!targetDepartment) {
+      setErrorMessage(text.errors.targetDepartmentRequired);
+      setSuccessMessage("");
+      return;
+    }
+
+    const body = buildImportFormData(channel, targetDepartment);
     for (const file of files) {
       body.append("files", file);
     }
@@ -190,6 +206,8 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
   const rows = list?.items ?? [];
   const emptyMessage = search.trim() ? text.empty.search : text.empty.channel;
   const canImport = hasPermissions(session.permissions, ["Resume.Create", "DepartmentResume.Create"]);
+  const importDepartments = concreteDepartments(session);
+  const needsTargetDepartment = importDepartments.length !== 1;
 
   return (
     <div className="grid gap-6">
@@ -230,7 +248,19 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
       </div>
 
       {canImport ? (
-        <div className="grid gap-3 border border-white/10 p-3 md:grid-cols-2">
+        <div className="grid gap-3 border border-white/10 p-3 md:grid-cols-3">
+          {needsTargetDepartment ? (
+            <Field label={text.import.targetDepartmentLabel}>
+              <Select onChange={(event) => setTargetDepartmentId(event.target.value)} value={targetDepartmentId}>
+                <option value="">{text.import.targetDepartmentPlaceholder}</option>
+                {importDepartments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
           <Field label={text.import.singleLabel}>
             <Input onChange={handleSingleImport} type="file" />
           </Field>
@@ -433,16 +463,27 @@ function validatePDF(file: File) {
   return "";
 }
 
-function buildImportFormData(channel: ResumeChannel, session: ResumeLibrarySession) {
+function buildImportFormData(channel: ResumeChannel, targetDepartmentId: string) {
   const body = new FormData();
   body.append("chan", channel);
-
-  const targetDepartment = session.dataScope.departments.find((department) => department.id !== "__system__");
-  if (targetDepartment) {
-    body.append("targetDepartmentId", targetDepartment.id);
-  }
+  body.append("targetDepartmentId", targetDepartmentId);
 
   return body;
+}
+
+function resolveImportTargetDepartment(session: ResumeLibrarySession, selectedDepartmentId: string) {
+  const departments = concreteDepartments(session);
+  if (departments.length === 1) {
+    return departments[0].id;
+  }
+  if (departments.some((department) => department.id === selectedDepartmentId)) {
+    return selectedDepartmentId;
+  }
+  return "";
+}
+
+function concreteDepartments(session: ResumeLibrarySession) {
+  return session.dataScope.departments.filter((department) => department.id !== "__system__");
 }
 
 async function waitForJob(jobId: string): Promise<JobStatus> {

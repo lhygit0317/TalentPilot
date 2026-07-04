@@ -134,11 +134,12 @@ func registerResumeRoutes(api huma.API, options Options) {
 		Tags:        []string{"resumes"},
 		Errors:      []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusUnprocessableEntity},
 	}, func(ctx context.Context, input *resumeImportInput) (*resumeJobOutput, error) {
-		principal, _, err := authorizeRequest(ctx, options, iam.ResourceResume, iam.ActionCreate)
+		principal, createScope, err := authorizeRequest(ctx, options, iam.ResourceResume, iam.ActionCreate)
 		if err != nil {
 			return nil, err
 		}
-		if _, _, err := authorizeRequest(ctx, options, iam.ResourceDepartmentResume, iam.ActionCreate); err != nil {
+		_, departmentResumeCreateScope, err := authorizeRequest(ctx, options, iam.ResourceDepartmentResume, iam.ActionCreate)
+		if err != nil {
 			return nil, err
 		}
 		service, err := requireResumeService(options.ResumeService)
@@ -146,17 +147,22 @@ func registerResumeRoutes(api huma.API, options Options) {
 			return nil, err
 		}
 		form := input.RawBody.Data()
+		if !scopeAllowsResumeChannel(createScope, form.Channel) {
+			return nil, apperror.NewProblem(apperror.PermissionDenied, "", "", map[string]any{"resource": iam.ResourceResume, "action": iam.ActionCreate})
+		}
 		file, err := importFileFromFormFile(form.File)
 		if err != nil {
 			return nil, err
 		}
 		status, err := service.ImportOne(ctx, resume.ImportInput{
-			UserID:             principal.User.ID,
-			UserName:           principal.User.Name,
-			Channel:            resume.Channel(form.Channel),
-			TargetDepartmentID: form.TargetDepartmentID,
-			DataScope:          principal.DataScope,
-			File:               file,
+			UserID:                      principal.User.ID,
+			UserName:                    principal.User.Name,
+			Channel:                     resume.Channel(form.Channel),
+			TargetDepartmentID:          form.TargetDepartmentID,
+			DataScope:                   principal.DataScope,
+			ResumeCreateScope:           createScope,
+			DepartmentResumeCreateScope: departmentResumeCreateScope,
+			File:                        file,
 		})
 		if err != nil {
 			return &resumeJobOutput{Body: status}, mapResumeError(err)
@@ -172,11 +178,12 @@ func registerResumeRoutes(api huma.API, options Options) {
 		Tags:        []string{"resumes"},
 		Errors:      []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusUnprocessableEntity},
 	}, func(ctx context.Context, input *resumeBatchImportInput) (*resumeJobOutput, error) {
-		principal, _, err := authorizeRequest(ctx, options, iam.ResourceResume, iam.ActionCreate)
+		principal, createScope, err := authorizeRequest(ctx, options, iam.ResourceResume, iam.ActionCreate)
 		if err != nil {
 			return nil, err
 		}
-		if _, _, err := authorizeRequest(ctx, options, iam.ResourceDepartmentResume, iam.ActionCreate); err != nil {
+		_, departmentResumeCreateScope, err := authorizeRequest(ctx, options, iam.ResourceDepartmentResume, iam.ActionCreate)
+		if err != nil {
 			return nil, err
 		}
 		service, err := requireResumeService(options.ResumeService)
@@ -184,6 +191,9 @@ func registerResumeRoutes(api huma.API, options Options) {
 			return nil, err
 		}
 		form := input.RawBody.Data()
+		if !scopeAllowsResumeChannel(createScope, form.Channel) {
+			return nil, apperror.NewProblem(apperror.PermissionDenied, "", "", map[string]any{"resource": iam.ResourceResume, "action": iam.ActionCreate})
+		}
 		files := make([]resume.ImportFile, 0, len(form.Files))
 		for _, formFile := range form.Files {
 			file, err := importFileFromFormFile(formFile)
@@ -193,12 +203,14 @@ func registerResumeRoutes(api huma.API, options Options) {
 			files = append(files, file)
 		}
 		status, err := service.ImportBatch(ctx, resume.BatchImportInput{
-			UserID:             principal.User.ID,
-			UserName:           principal.User.Name,
-			Channel:            resume.Channel(form.Channel),
-			TargetDepartmentID: form.TargetDepartmentID,
-			DataScope:          principal.DataScope,
-			Files:              files,
+			UserID:                      principal.User.ID,
+			UserName:                    principal.User.Name,
+			Channel:                     resume.Channel(form.Channel),
+			TargetDepartmentID:          form.TargetDepartmentID,
+			DataScope:                   principal.DataScope,
+			ResumeCreateScope:           createScope,
+			DepartmentResumeCreateScope: departmentResumeCreateScope,
+			Files:                       files,
 		})
 		if err != nil {
 			return &resumeJobOutput{Body: status}, mapResumeError(err)
@@ -219,11 +231,15 @@ func registerResumeRoutes(api huma.API, options Options) {
 		if err != nil {
 			return nil, err
 		}
+		_, departmentResumeDeleteScope, err := authorizeRequest(ctx, options, iam.ResourceDepartmentResume, iam.ActionDelete)
+		if err != nil {
+			return nil, err
+		}
 		service, err := requireResumeService(options.ResumeService)
 		if err != nil {
 			return nil, err
 		}
-		if err := service.Delete(ctx, input.ResumeID, scope); err != nil {
+		if err := service.Delete(ctx, input.ResumeID, scope, departmentResumeDeleteScope); err != nil {
 			return nil, mapResumeError(err)
 		}
 		return &deleteResumeOutput{Status: http.StatusNoContent}, nil
@@ -306,10 +322,30 @@ func importFileFromFormFile(file huma.FormFile) (resume.ImportFile, error) {
 	return resume.ImportFile{FileName: file.Filename, ContentType: file.ContentType, Bytes: content}, nil
 }
 
+func scopeAllowsResumeChannel(scope iam.ScopePredicate, channel string) bool {
+	for _, branch := range scope.Branches {
+		if len(branch.Channels) == 0 || containsResumeRouteString(branch.Channels, channel) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsResumeRouteString(values []string, expected string) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
+}
+
 func mapResumeError(err error) error {
 	switch {
 	case errors.Is(err, resume.ErrNotFound):
 		return apperror.NewProblem(apperror.ResumeNotFound, "", "", nil)
+	case errors.Is(err, resume.ErrDeleteDenied):
+		return apperror.NewProblem(apperror.ResumeDeleteDenied, "", "", nil)
 	case errors.Is(err, resume.ErrImportTargetRequired):
 		return apperror.NewProblem(apperror.ResumeImportTargetDepartmentRequired, "", "", nil)
 	case errors.Is(err, resume.ErrImportTargetInvalid):
@@ -320,6 +356,8 @@ func mapResumeError(err error) error {
 		return apperror.NewProblem(apperror.ResumeImportFileTooLarge, "", "", nil)
 	case errors.Is(err, resume.ErrEmptyFile):
 		return apperror.NewProblem(apperror.ResumeImportEmptyFile, "", "", nil)
+	case errors.Is(err, resume.ErrImportScopeDenied):
+		return apperror.NewProblem(apperror.PermissionDenied, "", "", nil)
 	case errors.Is(err, resume.ErrParseFailed):
 		return apperror.NewProblem(apperror.ResumeImportParseFailed, "", "", nil)
 	case errors.Is(err, resume.ErrJobNotFound):

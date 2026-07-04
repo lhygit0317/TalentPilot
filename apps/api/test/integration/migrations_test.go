@@ -209,6 +209,9 @@ func assertPresetIAMSeeded(t *testing.T, database *sql.DB) {
 	assertCount(t, database, "role_relations", "parent_role_id = '__role_super_admin__'", 3)
 	assertCount(t, database, "permissions", "role_id = '__role_social_owner__' AND resource = 'Resume' AND action = 'List' AND attribute_conditions = '{\"chan\":[\"social\"]}'", 1)
 	assertCount(t, database, "permissions", "role_id = '__role_campus_owner__' AND resource = 'Resume' AND action = 'List' AND attribute_conditions = '{\"chan\":[\"campus\"]}'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_hrbp__' AND resource = 'DepartmentResume' AND action = 'Delete'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_social_owner__' AND resource = 'DepartmentResume' AND action = 'Delete'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_campus_owner__' AND resource = 'DepartmentResume' AND action = 'Delete'", 1)
 	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Position' AND action = 'Delete'", 1)
 }
 

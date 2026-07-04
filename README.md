@@ -4,7 +4,7 @@ TalentPilot is a frontend/backend separated recruiting intelligence assistant fo
 
 ## Current Phase
 
-E1 auth and IAM runtime implementation are complete. E4 Resume Library implementation is the next active business slice. See:
+E1 auth, IAM runtime, and E4 Resume Library implementation are complete. E5 Department/Position or E2 Resume Parsing planning is next. See:
 
 - `PRD.md`
 - `AGENTS.md`

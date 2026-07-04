@@ -80,6 +80,34 @@ func TestSQLStoreListAppliesChannelAttributeScope(t *testing.T) {
 	}
 }
 
+func TestSQLStoreListKeepsAuthorizedEmptyChannelAvailable(t *testing.T) {
+	database := newResumeMigratedSQLiteGormDB(t)
+	seedResumeFixture(t, database)
+	store := resume.NewSQLStore(database)
+
+	result, err := store.List(context.Background(), resume.ListQuery{
+		Channel: resume.ChannelCampus,
+		Limit:   50,
+		Scope: scopeFor(iam.ActionList, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_b"},
+			Channels:      []string{"campus"},
+		}),
+	})
+	if err != nil {
+		t.Fatalf("list campus resumes: %v", err)
+	}
+
+	if len(result.Items) != 0 {
+		t.Fatalf("expected no campus resumes in dept_b, got %#v", result.Items)
+	}
+	if result.ChannelCounts[resume.ChannelCampus] != 0 {
+		t.Fatalf("expected zero campus count, got %#v", result.ChannelCounts)
+	}
+	if len(result.AvailableChannels) != 1 || result.AvailableChannels[0] != resume.ChannelCampus {
+		t.Fatalf("expected authorized empty campus channel to stay available, got %#v", result.AvailableChannels)
+	}
+}
+
 func TestSQLStoreSearchIsLiteralCaseInsensitiveAndScoped(t *testing.T) {
 	database := newResumeMigratedSQLiteGormDB(t)
 	seedResumeFixture(t, database)
@@ -122,10 +150,17 @@ func TestSQLStoreDeleteCascadesResumeRelationsButPreservesNotifications(t *testi
 	seedResumeFixture(t, database)
 	store := resume.NewSQLStore(database)
 
-	err := store.Delete(context.Background(), "resume_social_a", scopeFor(iam.ActionDelete, iam.ScopeBranch{
-		DepartmentIDs: []string{"dept_a"},
-		Channels:      []string{"social"},
-	}))
+	err := store.Delete(
+		context.Background(),
+		"resume_social_a",
+		scopeFor(iam.ActionDelete, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+			Channels:      []string{"social"},
+		}),
+		scopeFor(iam.ActionDelete, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+		}),
+	)
 	if err != nil {
 		t.Fatalf("delete resume: %v", err)
 	}
@@ -134,6 +169,29 @@ func TestSQLStoreDeleteCascadesResumeRelationsButPreservesNotifications(t *testi
 	assertResumeCount(t, database, "department_resumes", "resume_id = 'resume_social_a'", 0)
 	assertResumeCount(t, database, "position_resumes", "resume_id = 'resume_social_a'", 0)
 	assertResumeCount(t, database, "notifications", "id = 'notification_social_a'", 1)
+}
+
+func TestSQLStoreDeleteRequiresDepartmentResumeDeleteScope(t *testing.T) {
+	database := newResumeMigratedSQLiteGormDB(t)
+	seedResumeFixture(t, database)
+	store := resume.NewSQLStore(database)
+
+	err := store.Delete(
+		context.Background(),
+		"resume_social_a",
+		scopeFor(iam.ActionDelete, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_a"},
+			Channels:      []string{"social"},
+		}),
+		scopeFor(iam.ActionDelete, iam.ScopeBranch{
+			DepartmentIDs: []string{"dept_b"},
+		}),
+	)
+	if !errors.Is(err, resume.ErrDeleteDenied) {
+		t.Fatalf("expected delete denied, got %v", err)
+	}
+	assertResumeCount(t, database, "resumes", "id = 'resume_social_a'", 1)
+	assertResumeCount(t, database, "department_resumes", "resume_id = 'resume_social_a'", 1)
 }
 
 func scopeFor(action iam.Action, branch iam.ScopeBranch) iam.ScopePredicate {
