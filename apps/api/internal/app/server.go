@@ -12,6 +12,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 	"github.com/talentpilot/talentpilot/apps/api/internal/http/apperror"
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
+	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
 )
 
 type Server struct {
@@ -26,6 +27,7 @@ type Options struct {
 	SecureCookies       bool
 	TrustForwardedProto bool
 	IAMService          IAMService
+	ResumeService       ResumeService
 }
 
 type AuthService interface {
@@ -40,6 +42,15 @@ type IAMService interface {
 	Can(context.Context, iam.Principal, iam.Resource, iam.Action, iam.Target) iam.Decision
 	Scope(context.Context, iam.Principal, iam.Resource, iam.Action) (iam.ScopePredicate, error)
 	ResolvePrincipal(context.Context, string) (iam.Principal, error)
+}
+
+type ResumeService interface {
+	List(context.Context, resume.ListQuery) (resume.ListResult, error)
+	Get(context.Context, string, iam.ScopePredicate) (resume.Detail, error)
+	Delete(context.Context, string, iam.ScopePredicate) error
+	ImportOne(context.Context, resume.ImportInput) (resume.JobStatus, error)
+	ImportBatch(context.Context, resume.BatchImportInput) (resume.JobStatus, error)
+	GetJob(context.Context, string, string) (resume.JobStatus, error)
 }
 
 type healthOutput struct {
@@ -68,6 +79,7 @@ func NewServerWithOptions(options Options) *Server {
 
 	registerHealth(api)
 	registerAuthRoutes(api, options)
+	registerResumeRoutes(api, options)
 
 	return &Server{Echo: e, API: api}
 }

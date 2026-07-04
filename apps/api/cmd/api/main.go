@@ -4,11 +4,13 @@ import (
 	"log"
 
 	"github.com/talentpilot/talentpilot/apps/api/internal/app"
+	"github.com/talentpilot/talentpilot/apps/api/internal/audit"
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 	authw3 "github.com/talentpilot/talentpilot/apps/api/internal/auth/w3"
 	"github.com/talentpilot/talentpilot/apps/api/internal/config"
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 	"github.com/talentpilot/talentpilot/apps/api/internal/platform/db"
+	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
 )
 
 func main() {
@@ -26,9 +28,12 @@ func main() {
 	})
 	iamStore := iam.NewSQLStore(database)
 	iamService := iam.NewService(iamStore)
+	resumeStore := resume.NewSQLStore(database)
+	resumeService := resume.NewService(resumeStore, resume.NewPDFParser(), audit.NewSQLRecorder(database))
 	server := app.NewServerWithOptions(app.Options{
 		AuthService:         authService,
 		IAMService:          iamService,
+		ResumeService:       resumeService,
 		FrontendOrigin:      cfg.FrontendOrigin,
 		RequireHTTPS:        cfg.Env == "production",
 		SecureCookies:       cfg.SecureCookies,

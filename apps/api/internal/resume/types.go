@@ -50,44 +50,44 @@ type ListQuery struct {
 }
 
 type ListResult struct {
-	Items             []ListItem
-	ChannelCounts     map[Channel]int
-	AvailableChannels []Channel
-	DataScopeSummary  string
-	NextCursor        string
+	Items             []ListItem      `json:"items" nullable:"false"`
+	ChannelCounts     map[Channel]int `json:"channelCounts" nullable:"false"`
+	AvailableChannels []Channel       `json:"availableChannels" nullable:"false"`
+	DataScopeSummary  string          `json:"dataScopeSummary"`
+	NextCursor        string          `json:"nextCursor"`
 }
 
 type ListItem struct {
-	ID                string
-	Name              string
-	Age               *int
-	School            string
-	YearsExp          *float64
-	CurrentDepartment DepartmentSummary
-	Pos               string
-	Source            Source
-	SourceBy          string
-	Channel           Channel
-	Keywords          []string
-	CanGet            bool
-	CanDelete         bool
+	ID                string            `json:"id"`
+	Name              string            `json:"name"`
+	Age               *int              `json:"age,omitempty"`
+	School            string            `json:"school"`
+	YearsExp          *float64          `json:"yearsExp,omitempty"`
+	CurrentDepartment DepartmentSummary `json:"currentDepartment"`
+	Pos               string            `json:"pos"`
+	Source            Source            `json:"source"`
+	SourceBy          string            `json:"sourceBy"`
+	Channel           Channel           `json:"chan"`
+	Keywords          []string          `json:"keywords" nullable:"false"`
+	CanGet            bool              `json:"canGet"`
+	CanDelete         bool              `json:"canDelete"`
 }
 
 type Detail struct {
 	ListItem
-	CreatedAt time.Time
-	Expired   bool
-	Profile   Profile
+	CreatedAt time.Time `json:"createdAt"`
+	Expired   bool      `json:"expired"`
+	Profile   Profile   `json:"profile"`
 }
 
 type Profile struct {
-	Basic          map[string]any
-	Education      []map[string]any
-	WorkExperience []map[string]any
-	Projects       []map[string]any
-	Skills         []string
-	Certificates   []string
-	RawTextRef     string
+	Basic          map[string]any   `json:"basic" nullable:"false"`
+	Education      []map[string]any `json:"education" nullable:"false"`
+	WorkExperience []map[string]any `json:"workExperience" nullable:"false"`
+	Projects       []map[string]any `json:"projects" nullable:"false"`
+	Skills         []string         `json:"skills" nullable:"false"`
+	Certificates   []string         `json:"certificates" nullable:"false"`
+	RawTextRef     string           `json:"rawTextRef"`
 }
 
 type ParseInput struct {

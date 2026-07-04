@@ -91,6 +91,123 @@
         ],
         "type": "object"
       },
+      "DepartmentSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "Detail": {
+        "additionalProperties": false,
+        "properties": {
+          "age": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "canDelete": {
+            "type": "boolean"
+          },
+          "canGet": {
+            "type": "boolean"
+          },
+          "chan": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currentDepartment": {
+            "$ref": "#/components/schemas/DepartmentSummary"
+          },
+          "expired": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          },
+          "school": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceBy": {
+            "type": "string"
+          },
+          "yearsExp": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "createdAt",
+          "expired",
+          "profile",
+          "id",
+          "name",
+          "school",
+          "currentDepartment",
+          "pos",
+          "source",
+          "sourceBy",
+          "chan",
+          "keywords",
+          "canGet",
+          "canDelete"
+        ],
+        "type": "object"
+      },
+      "FormFile": {
+        "additionalProperties": false,
+        "properties": {
+          "ContentType": {
+            "type": "string"
+          },
+          "Filename": {
+            "type": "string"
+          },
+          "IsSet": {
+            "type": "boolean"
+          },
+          "Size": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ContentType",
+          "IsSet",
+          "Size",
+          "Filename"
+        ],
+        "type": "object"
+      },
       "HealthOutputBody": {
         "additionalProperties": false,
         "properties": {
@@ -103,6 +220,189 @@
         },
         "required": [
           "status"
+        ],
+        "type": "object"
+      },
+      "JobResult": {
+        "additionalProperties": false,
+        "properties": {
+          "errorCode": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "resumeId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileName",
+          "status"
+        ],
+        "type": "object"
+      },
+      "JobStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/JobResult"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/JobSummary"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "status",
+          "summary",
+          "results"
+        ],
+        "type": "object"
+      },
+      "JobSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "failed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "succeeded": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "succeeded",
+          "failed"
+        ],
+        "type": "object"
+      },
+      "ListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "age": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "canDelete": {
+            "type": "boolean"
+          },
+          "canGet": {
+            "type": "boolean"
+          },
+          "chan": {
+            "type": "string"
+          },
+          "currentDepartment": {
+            "$ref": "#/components/schemas/DepartmentSummary"
+          },
+          "id": {
+            "type": "string"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "string"
+          },
+          "school": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceBy": {
+            "type": "string"
+          },
+          "yearsExp": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "school",
+          "currentDepartment",
+          "pos",
+          "source",
+          "sourceBy",
+          "chan",
+          "keywords",
+          "canGet",
+          "canDelete"
+        ],
+        "type": "object"
+      },
+      "ListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "availableChannels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "channelCounts": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "dataScopeSummary": {
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ListItem"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "channelCounts",
+          "availableChannels",
+          "dataScopeSummary",
+          "nextCursor"
         ],
         "type": "object"
       },
@@ -146,6 +446,61 @@
           "message",
           "requestId",
           "details"
+        ],
+        "type": "object"
+      },
+      "Profile": {
+        "additionalProperties": false,
+        "properties": {
+          "basic": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "certificates": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "education": {
+            "items": {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "projects": {
+            "items": {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rawTextRef": {
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "workExperience": {
+            "items": {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "basic",
+          "education",
+          "workExperience",
+          "projects",
+          "skills",
+          "certificates",
+          "rawTextRef"
         ],
         "type": "object"
       },
@@ -465,6 +820,87 @@
         ]
       }
     },
+    "/jobs/{jobId}": {
+      "get": {
+        "operationId": "get-job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get job status",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
     "/me": {
       "get": {
         "operationId": "get-me",
@@ -529,6 +965,472 @@
         "summary": "Get current user",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/resumes": {
+      "get": {
+        "operationId": "get-resumes",
+        "parameters": [
+          {
+            "explode": false,
+            "in": "query",
+            "name": "chan",
+            "schema": {
+              "enum": [
+                "social",
+                "campus"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List resumes",
+        "tags": [
+          "resumes"
+        ]
+      }
+    },
+    "/resumes/batch-imports": {
+      "post": {
+        "operationId": "post-resume-batch-import",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "chan": {
+                  "contentType": "text/plain"
+                },
+                "files": {
+                  "contentType": "application/pdf,application/octet-stream"
+                },
+                "targetDepartmentId": {
+                  "contentType": "text/plain"
+                }
+              },
+              "schema": {
+                "properties": {
+                  "chan": {
+                    "enum": [
+                      "social",
+                      "campus"
+                    ],
+                    "type": "string"
+                  },
+                  "files": {
+                    "items": {
+                      "contentEncoding": "binary",
+                      "contentMediaType": "application/octet-stream",
+                      "format": "binary",
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "targetDepartmentId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "files",
+                  "chan",
+                  "targetDepartmentId"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Batch import resumes",
+        "tags": [
+          "resumes"
+        ]
+      }
+    },
+    "/resumes/imports": {
+      "post": {
+        "operationId": "post-resume-import",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "chan": {
+                  "contentType": "text/plain"
+                },
+                "file": {
+                  "contentType": "application/pdf,application/octet-stream"
+                },
+                "targetDepartmentId": {
+                  "contentType": "text/plain"
+                }
+              },
+              "schema": {
+                "properties": {
+                  "chan": {
+                    "enum": [
+                      "social",
+                      "campus"
+                    ],
+                    "type": "string"
+                  },
+                  "file": {
+                    "contentEncoding": "binary",
+                    "contentMediaType": "application/octet-stream",
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "targetDepartmentId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file",
+                  "chan",
+                  "targetDepartmentId"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Import one resume",
+        "tags": [
+          "resumes"
+        ]
+      }
+    },
+    "/resumes/{resumeId}": {
+      "delete": {
+        "operationId": "delete-resume",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resumeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Delete resume",
+        "tags": [
+          "resumes"
+        ]
+      },
+      "get": {
+        "operationId": "get-resume",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resumeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Detail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get resume detail",
+        "tags": [
+          "resumes"
         ]
       }
     }
