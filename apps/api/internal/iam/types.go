@@ -6,6 +6,10 @@ var (
 	ErrInvalidResource           = errors.New("iam invalid resource")
 	ErrInvalidAction             = errors.New("iam invalid action")
 	ErrInvalidAttributeCondition = errors.New("iam invalid attribute condition")
+	ErrPermissionNotFound        = errors.New("iam permission not found")
+	ErrRoleRelationCycle         = errors.New("iam role relation cycle")
+	ErrRoleRelationDepthExceeded = errors.New("iam role relation depth exceeded")
+	ErrScopeUnsupported          = errors.New("iam scope unsupported")
 )
 
 type Resource string
@@ -32,10 +36,104 @@ type PresetRole struct {
 	Enabled     bool
 }
 
+type Role = PresetRole
+
 type RoleRelation struct {
 	ID           string
 	ParentRoleID string
 	ChildRoleID  string
+}
+
+type User struct {
+	ID         string
+	EmployeeID string
+	Name       string
+}
+
+type Department struct {
+	ID   string
+	Name string
+}
+
+type RoleBinding struct {
+	ID           string
+	UserID       string
+	DepartmentID string
+	RoleID       string
+}
+
+type Snapshot struct {
+	User          User
+	Departments   []Department
+	RoleBindings  []RoleBinding
+	Roles         []Role
+	Permissions   []PermissionGrant
+	RoleRelations []RoleRelation
+}
+
+type DepartmentScope struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type DataScope struct {
+	Departments    []DepartmentScope `json:"departments" nullable:"false"`
+	AllDepartments bool              `json:"allDepartments"`
+	Channels       []string          `json:"channels" nullable:"false"`
+}
+
+type ScopedPermission struct {
+	PermissionGrant
+	BindingID      string
+	DepartmentID   string
+	DepartmentName string
+	AllDepartments bool
+	SelfUserID     string
+}
+
+type Principal struct {
+	User              User
+	Bindings          []RoleBinding
+	ExpandedRoleIDs   []string
+	Permissions       []PermissionGrant
+	ScopedPermissions []ScopedPermission
+	DataScope         DataScope
+	PageAccess        []string
+	DefaultRoute      string
+}
+
+type ScopeBranch struct {
+	BindingID      string
+	DepartmentIDs  []string
+	AllDepartments bool
+	Channels       []string
+	Expired        []bool
+	SelfUserID     string
+}
+
+type ScopePredicate struct {
+	Resource       Resource
+	Action         Action
+	DepartmentIDs  []string
+	AllDepartments bool
+	Channels       []string
+	Expired        []bool
+	SelfUserID     string
+	Branches       []ScopeBranch
+}
+
+type Target struct {
+	ID           string
+	UserID       string
+	DepartmentID string
+	Channel      string
+	Expired      *bool
+}
+
+type Decision struct {
+	Allowed           bool
+	Code              string
+	MatchedBindingIDs []string
 }
 
 const (
