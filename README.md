@@ -4,7 +4,7 @@ TalentPilot is a frontend/backend separated recruiting intelligence assistant fo
 
 ## Current Phase
 
-E1 auth implementation is complete; IAM SPEC and implementation plan are drafted and ready for execution. See:
+E1 auth and IAM runtime implementation are complete. E4 Resume Library implementation is the next active business slice. See:
 
 - `PRD.md`
 - `AGENTS.md`
@@ -12,6 +12,8 @@ E1 auth implementation is complete; IAM SPEC and implementation plan are drafted
 - `docs/specs/001-auth-session-w3.md`
 - `docs/specs/002-iam-permission-model.md`
 - `docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md`
+- `docs/specs/003-resume-library-import.md`
+- `docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md`
 - `docs/project-status.md`
 
 ## Commands
