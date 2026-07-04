@@ -25,6 +25,7 @@ func TestFoundationMigrationsCreateExpectedSchema(t *testing.T) {
 	assertFoundationTablesExist(t, database)
 	assertSystemDepartmentSeeded(t, database)
 	assertGuestRoleSeeded(t, database)
+	assertPresetIAMSeeded(t, database)
 	assertAuthSessionConstraints(t, database)
 	assertKeyUniqueConstraints(t, database)
 	assertForeignKeysAreEnforced(t, database)
@@ -79,6 +80,25 @@ func TestE1MigrationFailsOnGuestRoleLabelConflict(t *testing.T) {
 	if _, err := provider.Up(ctx); err == nil {
 		t.Fatalf("expected E1 migration to fail on conflicting guest role label")
 	}
+}
+
+func TestIAMSeedMigrationDownRemovesPresetSeed(t *testing.T) {
+	ctx := context.Background()
+	database := openSQLite(t)
+	provider := newMigrationProvider(t, database)
+
+	if _, err := provider.Up(ctx); err != nil {
+		t.Fatalf("goose up: %v", err)
+	}
+
+	if _, err := provider.DownTo(ctx, 2); err != nil {
+		t.Fatalf("goose down to auth seed: %v", err)
+	}
+
+	assertCount(t, database, "role_relations", "parent_role_id IN ('__role_hrd__','__role_super_admin__')", 0)
+	assertCount(t, database, "permissions", "role_id IN ('__role_hrbp__','__role_hrd__','__role_manager__','__role_trainee__','__role_social_owner__','__role_campus_owner__','__role_super_admin__')", 0)
+	assertCount(t, database, "roles", "id IN ('__role_hrbp__','__role_hrd__','__role_manager__','__role_trainee__','__role_social_owner__','__role_campus_owner__','__role_super_admin__')", 0)
+	assertCount(t, database, "roles", "id = '__role_guest__'", 1)
 }
 
 func openSQLite(t *testing.T) *sql.DB {
@@ -166,6 +186,17 @@ func assertGuestRoleSeeded(t *testing.T, database *sql.DB) {
 
 	assertCount(t, database, "permissions", "role_id = '__role_guest__' AND resource = 'Department' AND action = 'List'", 1)
 	assertCount(t, database, "permissions", "role_id = '__role_guest__' AND resource = 'User' AND action = 'Get'", 1)
+}
+
+func assertPresetIAMSeeded(t *testing.T, database *sql.DB) {
+	t.Helper()
+
+	assertCount(t, database, "roles", "id IN ('__role_hrbp__','__role_hrd__','__role_manager__','__role_trainee__','__role_social_owner__','__role_campus_owner__','__role_super_admin__')", 7)
+	assertCount(t, database, "role_relations", "parent_role_id = '__role_hrd__'", 3)
+	assertCount(t, database, "role_relations", "parent_role_id = '__role_super_admin__'", 3)
+	assertCount(t, database, "permissions", "role_id = '__role_social_owner__' AND resource = 'Resume' AND action = 'List' AND attribute_conditions = '{\"chan\":[\"social\"]}'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_campus_owner__' AND resource = 'Resume' AND action = 'List' AND attribute_conditions = '{\"chan\":[\"campus\"]}'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Position' AND action = 'Delete'", 1)
 }
 
 func assertAuthSessionConstraints(t *testing.T, database *sql.DB) {
