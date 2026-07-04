@@ -7,6 +7,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 	authw3 "github.com/talentpilot/talentpilot/apps/api/internal/auth/w3"
 	"github.com/talentpilot/talentpilot/apps/api/internal/config"
+	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 	"github.com/talentpilot/talentpilot/apps/api/internal/platform/db"
 )
 
@@ -18,13 +19,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := auth.NewSQLStore(database)
+	authStore := auth.NewSQLStore(database)
 	authService := auth.NewService(auth.ServiceConfig{
 		W3:    newW3Adapter(cfg),
-		Store: store,
+		Store: authStore,
 	})
+	iamStore := iam.NewSQLStore(database)
+	iamService := iam.NewService(iamStore)
 	server := app.NewServerWithOptions(app.Options{
 		AuthService:         authService,
+		IAMService:          iamService,
 		FrontendOrigin:      cfg.FrontendOrigin,
 		RequireHTTPS:        cfg.Env == "production",
 		SecureCookies:       cfg.SecureCookies,

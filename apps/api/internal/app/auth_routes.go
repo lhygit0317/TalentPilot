@@ -11,6 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 	"github.com/talentpilot/talentpilot/apps/api/internal/http/apperror"
+	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 )
 
 const authCookieName = "tp_auth"
@@ -61,6 +62,8 @@ type authResponse struct {
 	RoleLabels   []string           `json:"roleLabels" nullable:"false"`
 	PageAccess   []string           `json:"pageAccess" nullable:"false"`
 	DefaultRoute string             `json:"defaultRoute"`
+	Permissions  []string           `json:"permissions" nullable:"false"`
+	DataScope    iam.DataScope      `json:"dataScope"`
 }
 
 func registerAuthRoutes(api huma.API, options Options) {
@@ -101,12 +104,16 @@ func registerAuthRoutes(api huma.API, options Options) {
 		if err != nil {
 			return nil, mapAuthError(err)
 		}
+		body, err := authResponseFromResult(ctx, options, result)
+		if err != nil {
+			return nil, err
+		}
 		return &authOutput{
 			SetCookie: []http.Cookie{
 				authCookie(result.AuthToken, options.SecureCookies),
 				csrfCookie(result.CSRFToken, options.SecureCookies),
 			},
-			Body: authResponseFromResult(result),
+			Body: body,
 		}, nil
 	})
 
@@ -126,7 +133,11 @@ func registerAuthRoutes(api huma.API, options Options) {
 		if err != nil {
 			return nil, mapAuthError(err)
 		}
-		return &authOutput{Body: authResponseFromResult(result)}, nil
+		body, err := authResponseFromResult(ctx, options, result)
+		if err != nil {
+			return nil, err
+		}
+		return &authOutput{Body: body}, nil
 	})
 
 	huma.Register(api, huma.Operation{
@@ -213,14 +224,34 @@ func mapAuthError(err error) error {
 	}
 }
 
-func authResponseFromResult(result auth.LoginResult) authResponse {
-	return authResponse{
+func authResponseFromResult(ctx context.Context, options Options, result auth.LoginResult) (authResponse, error) {
+	response := authResponse{
 		User:         result.User,
 		RoleBindings: result.RoleBindings,
 		RoleLabels:   result.RoleLabels,
 		PageAccess:   result.PageAccess,
 		DefaultRoute: result.DefaultRoute,
+		Permissions:  []string{},
+		DataScope:    iam.DataScope{Departments: []iam.DepartmentScope{}, Channels: []string{}},
 	}
+	if options.IAMService == nil {
+		return response, nil
+	}
+	summary, err := options.IAMService.RoleSummary(ctx, result.User.ID)
+	if err != nil {
+		return authResponse{}, mapIAMError(err)
+	}
+	response.Permissions = summary.Permissions
+	response.DataScope = summary.DataScope
+	response.PageAccess = summary.PageAccess
+	response.DefaultRoute = summary.DefaultRoute
+	if response.DataScope.Departments == nil {
+		response.DataScope.Departments = []iam.DepartmentScope{}
+	}
+	if response.DataScope.Channels == nil {
+		response.DataScope.Channels = []string{}
+	}
+	return response, nil
 }
 
 func authCookie(value string, secure bool) http.Cookie {

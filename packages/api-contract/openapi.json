@@ -4,10 +4,19 @@
       "AuthResponse": {
         "additionalProperties": false,
         "properties": {
+          "dataScope": {
+            "$ref": "#/components/schemas/DataScope"
+          },
           "defaultRoute": {
             "type": "string"
           },
           "pageAccess": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "permissions": {
             "items": {
               "type": "string"
             },
@@ -34,7 +43,51 @@
           "roleBindings",
           "roleLabels",
           "pageAccess",
-          "defaultRoute"
+          "defaultRoute",
+          "permissions",
+          "dataScope"
+        ],
+        "type": "object"
+      },
+      "DataScope": {
+        "additionalProperties": false,
+        "properties": {
+          "allDepartments": {
+            "type": "boolean"
+          },
+          "channels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentScope"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "departments",
+          "allDepartments",
+          "channels"
+        ],
+        "type": "object"
+      },
+      "DepartmentScope": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
         ],
         "type": "object"
       },

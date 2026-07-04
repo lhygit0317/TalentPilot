@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
+	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 )
 
 func TestW3LoginRequiresCSRF(t *testing.T) {
@@ -196,6 +197,49 @@ func TestMeUsesAuthCookie(t *testing.T) {
 	assertAuthResponse(t, rec.Body.String())
 }
 
+func TestMeIncludesIAMPermissionsAndDataScope(t *testing.T) {
+	authSvc := newFakeHTTPAuthService()
+	iamSvc := &fakeIAMService{
+		roleSummary: iam.RoleSummary{
+			Permissions: []string{"Resume.List", "Position.List"},
+			DataScope: iam.DataScope{
+				Departments: []iam.DepartmentScope{{ID: "dept_a", Name: "算力训练平台部"}},
+				Channels:    []string{"social", "campus"},
+			},
+			PageAccess:   []string{"resume-parse", "resume-library"},
+			DefaultRoute: "/resume-parse",
+		},
+	}
+	server := NewServerWithOptions(Options{AuthService: authSvc, IAMService: iamSvc})
+	req := httptest.NewRequest(http.MethodGet, "/me", nil)
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Permissions []string `json:"permissions"`
+		DataScope   struct {
+			Departments    []struct{ ID, Name string } `json:"departments"`
+			AllDepartments bool                        `json:"allDepartments"`
+			Channels       []string                    `json:"channels"`
+		} `json:"dataScope"`
+		PageAccess []string `json:"pageAccess"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("unmarshal /me body: %v", err)
+	}
+	if !containsString(body.Permissions, "Resume.List") || !containsString(body.PageAccess, "resume-library") {
+		t.Fatalf("expected IAM permissions and page access, got %#v", body)
+	}
+	if len(body.DataScope.Departments) != 1 || body.DataScope.Departments[0].Name != "算力训练平台部" || !containsString(body.DataScope.Channels, "campus") {
+		t.Fatalf("expected IAM data scope, got %#v", body.DataScope)
+	}
+}
+
 func TestLogoutRevokesSessionAndExpiresCookies(t *testing.T) {
 	authSvc := newFakeHTTPAuthService()
 	server := NewServerWithOptions(Options{AuthService: authSvc})
@@ -260,6 +304,56 @@ func TestAuthenticatedMiddlewareRejectsInvalidSessionForFutureRoutes(t *testing.
 	assertErrorCode(t, rec.Body.String(), "AUTH_UNAUTHENTICATED")
 }
 
+func TestIAMGuardRejectsAuthenticatedUnauthorizedFutureRoute(t *testing.T) {
+	server := NewServerWithOptions(Options{
+		AuthService: newFakeHTTPAuthService(),
+		IAMService:  &fakeIAMService{decision: iam.Decision{Allowed: false}},
+	})
+	server.Echo.GET("/future/iam-denied", func(c echo.Context) error {
+		return c.NoContent(http.StatusNoContent)
+	}, RequirePermission(iam.ResourceResume, iam.ActionList))
+
+	req := httptest.NewRequest(http.MethodGet, "/future/iam-denied", nil)
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	assertErrorCode(t, rec.Body.String(), "IAM_PERMISSION_DENIED")
+}
+
+func TestIAMGuardAttachesScopePredicateForListRoute(t *testing.T) {
+	expectedScope := iam.ScopePredicate{
+		Resource: iam.ResourceResume,
+		Action:   iam.ActionList,
+		Branches: []iam.ScopeBranch{{DepartmentIDs: []string{"dept_a"}}},
+	}
+	server := NewServerWithOptions(Options{
+		AuthService: newFakeHTTPAuthService(),
+		IAMService:  &fakeIAMService{decision: iam.Decision{Allowed: true}, scope: expectedScope},
+	})
+	server.Echo.GET("/future/iam-allowed", func(c echo.Context) error {
+		scope, ok := ScopePredicateFromContext(c.Request().Context())
+		if !ok || len(scope.Branches) != 1 || scope.Branches[0].DepartmentIDs[0] != "dept_a" {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "missing scope"})
+		}
+		return c.NoContent(http.StatusNoContent)
+	}, RequirePermission(iam.ResourceResume, iam.ActionList))
+
+	req := httptest.NewRequest(http.MethodGet, "/future/iam-allowed", nil)
+	req.AddCookie(&http.Cookie{Name: "tp_auth", Value: "auth_cookie"})
+	rec := httptest.NewRecorder()
+
+	server.Echo.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
 type fakeHTTPAuthService struct {
 	loginCalls       int
 	currentUserToken string
@@ -268,6 +362,28 @@ type fakeHTTPAuthService struct {
 	loginErr         error
 	currentUserErr   error
 	logoutErr        error
+}
+
+type fakeIAMService struct {
+	roleSummary iam.RoleSummary
+	decision    iam.Decision
+	scope       iam.ScopePredicate
+}
+
+func (f *fakeIAMService) RoleSummary(ctx context.Context, userID string) (iam.RoleSummary, error) {
+	return f.roleSummary, nil
+}
+
+func (f *fakeIAMService) Can(ctx context.Context, principal iam.Principal, resource iam.Resource, action iam.Action, target iam.Target) iam.Decision {
+	return f.decision
+}
+
+func (f *fakeIAMService) Scope(ctx context.Context, principal iam.Principal, resource iam.Resource, action iam.Action) (iam.ScopePredicate, error) {
+	return f.scope, nil
+}
+
+func (f *fakeIAMService) ResolvePrincipal(ctx context.Context, userID string) (iam.Principal, error) {
+	return iam.Principal{User: iam.User{ID: userID}}, nil
 }
 
 func newFakeHTTPAuthService() *fakeHTTPAuthService {
@@ -376,4 +492,13 @@ func assertErrorCode(t *testing.T, raw string, expected string) {
 	if body.Code != expected {
 		t.Fatalf("expected error code %s, got %s body=%s", expected, body.Code, raw)
 	}
+}
+
+func containsString(values []string, expected string) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
 }

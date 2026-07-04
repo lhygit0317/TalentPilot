@@ -1,6 +1,7 @@
 package apperror
 
 import (
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -37,6 +38,30 @@ func TestNewProblemUsesDefaultMessageWhenEmpty(t *testing.T) {
 	}
 	if problem.Code != AuthCSRFInvalid {
 		t.Fatalf("Code = %q, want %q", problem.Code, AuthCSRFInvalid)
+	}
+}
+
+func TestDefaultMessageIncludesIAMCodes(t *testing.T) {
+	cases := []struct {
+		code   Code
+		status int
+	}{
+		{IAMPermissionNotFound, http.StatusNotFound},
+		{IAMInvalidResource, http.StatusUnprocessableEntity},
+		{IAMInvalidAction, http.StatusUnprocessableEntity},
+		{IAMInvalidAttributeCondition, http.StatusUnprocessableEntity},
+		{IAMRoleRelationDepthExceeded, http.StatusUnprocessableEntity},
+		{IAMPrincipalNotFound, http.StatusNotFound},
+		{IAMScopeUnsupported, http.StatusUnprocessableEntity},
+	}
+	for _, tc := range cases {
+		problem := NewProblem(tc.code, "", "req_iam", nil)
+		if problem.GetStatus() != tc.status {
+			t.Fatalf("%s status=%d want %d", tc.code, problem.GetStatus(), tc.status)
+		}
+		if problem.Message == "" {
+			t.Fatalf("expected default message for %s", tc.code)
+		}
 	}
 }
 

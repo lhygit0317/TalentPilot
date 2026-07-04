@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 	"github.com/talentpilot/talentpilot/apps/api/internal/http/apperror"
+	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 )
 
 type Server struct {
@@ -24,6 +25,7 @@ type Options struct {
 	RequireHTTPS        bool
 	SecureCookies       bool
 	TrustForwardedProto bool
+	IAMService          IAMService
 }
 
 type AuthService interface {
@@ -31,6 +33,13 @@ type AuthService interface {
 	Login(context.Context, auth.LoginInput) (auth.LoginResult, error)
 	CurrentUser(context.Context, string) (auth.LoginResult, error)
 	Logout(context.Context, string, string) error
+}
+
+type IAMService interface {
+	RoleSummary(context.Context, string) (iam.RoleSummary, error)
+	Can(context.Context, iam.Principal, iam.Resource, iam.Action, iam.Target) iam.Decision
+	Scope(context.Context, iam.Principal, iam.Resource, iam.Action) (iam.ScopePredicate, error)
+	ResolvePrincipal(context.Context, string) (iam.Principal, error)
 }
 
 type healthOutput struct {
@@ -132,9 +141,13 @@ func authenticatedRequestGuard(options Options) echo.MiddlewareFunc {
 			if err != nil {
 				return writeProblem(c, err)
 			}
-			if _, err := service.CurrentUser(request.Context(), authCookie.Value); err != nil {
+			result, err := service.CurrentUser(request.Context(), authCookie.Value)
+			if err != nil {
 				return writeProblem(c, mapAuthError(err))
 			}
+			ctx := context.WithValue(request.Context(), authResultContextKey{}, result)
+			ctx = context.WithValue(ctx, iamServiceContextKey{}, options.IAMService)
+			c.SetRequest(request.WithContext(ctx))
 
 			return next(c)
 		}

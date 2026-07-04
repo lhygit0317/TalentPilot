@@ -9,19 +9,26 @@ import (
 type Code string
 
 const (
-	Unauthenticated      Code = "AUTH_UNAUTHENTICATED"
-	AuthCSRFInvalid      Code = "AUTH_CSRF_INVALID"
-	AuthW3Invalid        Code = "AUTH_W3_INVALID_CREDENTIALS"
-	AuthW3Unavailable    Code = "AUTH_W3_UNAVAILABLE"
-	AuthW3Timeout        Code = "AUTH_W3_TIMEOUT"
-	AuthSessionExpired   Code = "AUTH_SESSION_EXPIRED"
-	AuthSessionRevoked   Code = "AUTH_SESSION_REVOKED"
-	AuthLoginFailed      Code = "AUTH_LOGIN_FAILED"
-	AuthHTTPSRequired    Code = "AUTH_HTTPS_REQUIRED"
-	PermissionDenied     Code = "IAM_PERMISSION_DENIED"
-	IAMRoleRelationCycle Code = "IAM_ROLE_RELATION_CYCLE"
-	ValidationFailed     Code = "VALIDATION_FAILED"
-	Internal             Code = "INTERNAL_ERROR"
+	Unauthenticated              Code = "AUTH_UNAUTHENTICATED"
+	AuthCSRFInvalid              Code = "AUTH_CSRF_INVALID"
+	AuthW3Invalid                Code = "AUTH_W3_INVALID_CREDENTIALS"
+	AuthW3Unavailable            Code = "AUTH_W3_UNAVAILABLE"
+	AuthW3Timeout                Code = "AUTH_W3_TIMEOUT"
+	AuthSessionExpired           Code = "AUTH_SESSION_EXPIRED"
+	AuthSessionRevoked           Code = "AUTH_SESSION_REVOKED"
+	AuthLoginFailed              Code = "AUTH_LOGIN_FAILED"
+	AuthHTTPSRequired            Code = "AUTH_HTTPS_REQUIRED"
+	PermissionDenied             Code = "IAM_PERMISSION_DENIED"
+	IAMPermissionNotFound        Code = "IAM_PERMISSION_NOT_FOUND"
+	IAMInvalidResource           Code = "IAM_INVALID_RESOURCE"
+	IAMInvalidAction             Code = "IAM_INVALID_ACTION"
+	IAMInvalidAttributeCondition Code = "IAM_INVALID_ATTRIBUTE_CONDITION"
+	IAMRoleRelationCycle         Code = "IAM_ROLE_RELATION_CYCLE"
+	IAMRoleRelationDepthExceeded Code = "IAM_ROLE_RELATION_DEPTH_EXCEEDED"
+	IAMPrincipalNotFound         Code = "IAM_PRINCIPAL_NOT_FOUND"
+	IAMScopeUnsupported          Code = "IAM_SCOPE_UNSUPPORTED"
+	ValidationFailed             Code = "VALIDATION_FAILED"
+	Internal                     Code = "INTERNAL_ERROR"
 )
 
 type Problem struct {
@@ -120,7 +127,9 @@ func statusForCode(code Code) int {
 		return http.StatusGatewayTimeout
 	case PermissionDenied:
 		return http.StatusForbidden
-	case ValidationFailed, IAMRoleRelationCycle:
+	case IAMPermissionNotFound, IAMPrincipalNotFound:
+		return http.StatusNotFound
+	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -149,7 +158,23 @@ func defaultMessage(code Code) string {
 		return "生产环境必须使用 HTTPS 登录"
 	case PermissionDenied:
 		return "没有权限"
-	case ValidationFailed, IAMRoleRelationCycle:
+	case IAMPermissionNotFound:
+		return "权限不存在"
+	case IAMInvalidResource:
+		return "资源类型不合法"
+	case IAMInvalidAction:
+		return "操作类型不合法"
+	case IAMInvalidAttributeCondition:
+		return "权限属性条件不合法"
+	case IAMRoleRelationCycle:
+		return "角色包含关系不能形成循环"
+	case IAMRoleRelationDepthExceeded:
+		return "角色包含层级过深"
+	case IAMPrincipalNotFound:
+		return "权限主体不存在"
+	case IAMScopeUnsupported:
+		return "该角色不支持系统级数据范围"
+	case ValidationFailed:
 		return "请求参数不合法"
 	default:
 		return "服务器内部错误"

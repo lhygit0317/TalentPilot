@@ -93,6 +93,37 @@ func TestOpenAPIAuthResponseArraysAreNotNullable(t *testing.T) {
 	}
 }
 
+func TestOpenAPIAuthResponseIncludesIAMFields(t *testing.T) {
+	server := NewServer()
+
+	raw, err := json.Marshal(server.API.OpenAPI())
+	if err != nil {
+		t.Fatalf("marshal openapi: %v", err)
+	}
+
+	var doc struct {
+		Components struct {
+			Schemas map[string]struct {
+				Properties map[string]json.RawMessage `json:"properties"`
+			} `json:"schemas"`
+		} `json:"components"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatalf("unmarshal openapi: %v", err)
+	}
+
+	authResponse, ok := doc.Components.Schemas["AuthResponse"]
+	if !ok {
+		t.Fatalf("expected AuthResponse schema")
+	}
+	if _, ok := authResponse.Properties["permissions"]; !ok {
+		t.Fatalf("expected AuthResponse.permissions schema")
+	}
+	if _, ok := authResponse.Properties["dataScope"]; !ok {
+		t.Fatalf("expected AuthResponse.dataScope schema")
+	}
+}
+
 func TestOpenAPIDocumentUsesStableErrorEnvelope(t *testing.T) {
 	server := NewServer()
 
