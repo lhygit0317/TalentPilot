@@ -12,6 +12,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 	"github.com/talentpilot/talentpilot/apps/api/internal/http/apperror"
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
+	"github.com/talentpilot/talentpilot/apps/api/internal/organization"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
 )
 
@@ -28,6 +29,7 @@ type Options struct {
 	TrustForwardedProto bool
 	IAMService          IAMService
 	ResumeService       ResumeService
+	OrganizationService OrganizationService
 }
 
 type AuthService interface {
@@ -51,6 +53,19 @@ type ResumeService interface {
 	ImportOne(context.Context, resume.ImportInput) (resume.JobStatus, error)
 	ImportBatch(context.Context, resume.BatchImportInput) (resume.JobStatus, error)
 	GetJob(context.Context, string, string) (resume.JobStatus, error)
+}
+
+type OrganizationService interface {
+	ListDepartments(context.Context, organization.DepartmentListQuery) (organization.DepartmentListResult, error)
+	GetDepartment(context.Context, string, iam.ScopePredicate) (organization.DepartmentDetail, error)
+	CreateDepartment(context.Context, organization.DepartmentInput) (organization.DepartmentDetail, error)
+	UpdateDepartment(context.Context, string, organization.DepartmentInput, iam.ScopePredicate) (organization.DepartmentDetail, error)
+	DeleteDepartment(context.Context, string, iam.ScopePredicate, string) error
+	ListPositions(context.Context, organization.PositionListQuery) (organization.PositionListResult, error)
+	GetPosition(context.Context, string, iam.ScopePredicate) (organization.PositionDetail, error)
+	CreatePosition(context.Context, organization.PositionInput) (organization.PositionDetail, error)
+	UpdatePosition(context.Context, string, organization.PositionInput, iam.ScopePredicate) (organization.PositionDetail, error)
+	DeletePosition(context.Context, string, iam.ScopePredicate, string) error
 }
 
 type healthOutput struct {
@@ -80,6 +95,7 @@ func NewServerWithOptions(options Options) *Server {
 	registerHealth(api)
 	registerAuthRoutes(api, options)
 	registerResumeRoutes(api, options)
+	registerOrganizationRoutes(api, options)
 
 	return &Server{Echo: e, API: api}
 }

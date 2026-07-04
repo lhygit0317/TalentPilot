@@ -9,6 +9,7 @@ import (
 	authw3 "github.com/talentpilot/talentpilot/apps/api/internal/auth/w3"
 	"github.com/talentpilot/talentpilot/apps/api/internal/config"
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
+	"github.com/talentpilot/talentpilot/apps/api/internal/organization"
 	"github.com/talentpilot/talentpilot/apps/api/internal/platform/db"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
 )
@@ -28,12 +29,16 @@ func main() {
 	})
 	iamStore := iam.NewSQLStore(database)
 	iamService := iam.NewService(iamStore)
+	auditRecorder := audit.NewSQLRecorder(database)
 	resumeStore := resume.NewSQLStore(database)
-	resumeService := resume.NewService(resumeStore, resume.NewPDFParser(), audit.NewSQLRecorder(database))
+	resumeService := resume.NewService(resumeStore, resume.NewPDFParser(), auditRecorder)
+	organizationStore := organization.NewSQLStore(database)
+	organizationService := organization.NewService(organizationStore, auditRecorder)
 	server := app.NewServerWithOptions(app.Options{
 		AuthService:         authService,
 		IAMService:          iamService,
 		ResumeService:       resumeService,
+		OrganizationService: organizationService,
 		FrontendOrigin:      cfg.FrontendOrigin,
 		RequireHTTPS:        cfg.Env == "production",
 		SecureCookies:       cfg.SecureCookies,

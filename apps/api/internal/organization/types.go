@@ -67,7 +67,7 @@ type DepartmentInput struct {
 	Name        string
 }
 
-type DepartmentSummary struct {
+type PositionDepartmentSummary struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -89,18 +89,18 @@ type PositionListResult struct {
 }
 
 type PositionListItem struct {
-	ID               string            `json:"id"`
-	Name             string            `json:"name"`
-	Department       DepartmentSummary `json:"department"`
-	Chan             string            `json:"chan"`
-	Level            string            `json:"level"`
-	Status           string            `json:"status"`
-	KeywordCount     int               `json:"keywordCount"`
-	ImplicitTagCount int               `json:"implicitTagCount"`
-	UpdatedAt        time.Time         `json:"updatedAt"`
-	CanGet           bool              `json:"canGet"`
-	CanUpdate        bool              `json:"canUpdate"`
-	CanDelete        bool              `json:"canDelete"`
+	ID               string                    `json:"id"`
+	Name             string                    `json:"name"`
+	Department       PositionDepartmentSummary `json:"department"`
+	Chan             string                    `json:"chan"`
+	Level            string                    `json:"level"`
+	Status           string                    `json:"status"`
+	KeywordCount     int                       `json:"keywordCount"`
+	ImplicitTagCount int                       `json:"implicitTagCount"`
+	UpdatedAt        time.Time                 `json:"updatedAt"`
+	CanGet           bool                      `json:"canGet"`
+	CanUpdate        bool                      `json:"canUpdate"`
+	CanDelete        bool                      `json:"canDelete"`
 }
 
 type PositionDetail struct {

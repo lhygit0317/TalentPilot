@@ -32,6 +32,66 @@ export function getJob(jobId: string) {
   return apiClient.GET("/jobs/{jobId}", { params: { path: { jobId } } });
 }
 
+export function listDepartments(query: { search?: string; limit?: number } = {}) {
+  return apiClient.GET("/departments", { params: { query } });
+}
+
+export function getDepartment(departmentId: string) {
+  return apiClient.GET("/departments/{departmentId}", { params: { path: { departmentId } } });
+}
+
+export function createDepartment(body: { name: string }) {
+  return apiClient.POST("/departments", { body });
+}
+
+export function updateDepartment(departmentId: string, body: { name: string }) {
+  return apiClient.PATCH("/departments/{departmentId}", { params: { path: { departmentId } }, body });
+}
+
+export function deleteDepartment(departmentId: string) {
+  return apiClient.DELETE("/departments/{departmentId}", { params: { path: { departmentId } } });
+}
+
+export type PositionMutation = {
+  name: string;
+  departmentId: string;
+  chan: "social" | "campus";
+  level: string;
+  status: "on" | "off";
+  duties: string[];
+  must: string[];
+  keywords: string[];
+  implicitTags: Array<{ name: string; w?: number }>;
+};
+
+export function listPositions(
+  query: {
+    departmentId?: string;
+    chan?: "social" | "campus";
+    status?: "on" | "off";
+    search?: string;
+    limit?: number;
+  } = {},
+) {
+  return apiClient.GET("/positions", { params: { query } });
+}
+
+export function getPosition(positionId: string) {
+  return apiClient.GET("/positions/{positionId}", { params: { path: { positionId } } });
+}
+
+export function createPosition(body: PositionMutation) {
+  return apiClient.POST("/positions", { body });
+}
+
+export function updatePosition(positionId: string, body: PositionMutation) {
+  return apiClient.PATCH("/positions/{positionId}", { params: { path: { positionId } }, body });
+}
+
+export function deletePosition(positionId: string) {
+  return apiClient.DELETE("/positions/{positionId}", { params: { path: { positionId } } });
+}
+
 export async function loginWithW3(account: string, password: string) {
   await apiClient.GET("/auth/csrf");
 

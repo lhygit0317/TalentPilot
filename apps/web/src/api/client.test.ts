@@ -68,4 +68,65 @@ describe("api client", () => {
 
     expect(get).toHaveBeenCalledWith("/jobs/{jobId}", { params: { path: { jobId: "job_1" } } });
   });
+
+  it("lists creates updates and deletes departments", async () => {
+    const del = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const get = vi.fn().mockResolvedValue({ data: { items: [] }, error: undefined });
+    const patch = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    vi.doMock("@talentpilot/api-client", () => ({
+      createTalentPilotClient: vi.fn(() => ({ DELETE: del, GET: get, PATCH: patch, POST: post })),
+    }));
+
+    const { createDepartment, deleteDepartment, listDepartments, updateDepartment } = await import("./client");
+    await listDepartments({ search: "算力", limit: 25 });
+    await createDepartment({ name: "智算调度部" });
+    await updateDepartment("dept_a", { name: "算力训练平台部" });
+    await deleteDepartment("dept_a");
+
+    expect(get).toHaveBeenCalledWith("/departments", { params: { query: { search: "算力", limit: 25 } } });
+    expect(post).toHaveBeenCalledWith("/departments", { body: { name: "智算调度部" } });
+    expect(patch).toHaveBeenCalledWith("/departments/{departmentId}", {
+      params: { path: { departmentId: "dept_a" } },
+      body: { name: "算力训练平台部" },
+    });
+    expect(del).toHaveBeenCalledWith("/departments/{departmentId}", { params: { path: { departmentId: "dept_a" } } });
+  });
+
+  it("lists creates updates and deletes positions", async () => {
+    const del = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const get = vi.fn().mockResolvedValue({ data: { items: [] }, error: undefined });
+    const patch = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    vi.doMock("@talentpilot/api-client", () => ({
+      createTalentPilotClient: vi.fn(() => ({ DELETE: del, GET: get, PATCH: patch, POST: post })),
+    }));
+    const body = {
+      name: "平台工程师",
+      departmentId: "dept_a",
+      chan: "social" as const,
+      level: "P6",
+      status: "on" as const,
+      duties: ["负责训练平台"],
+      must: ["熟悉 Go"],
+      keywords: ["Go"],
+      implicitTags: [{ name: "系统设计", w: 40 }],
+    };
+
+    const { createPosition, deletePosition, listPositions, updatePosition } = await import("./client");
+    await listPositions({ departmentId: "dept_a", chan: "social", status: "on", search: "Go", limit: 50 });
+    await createPosition(body);
+    await updatePosition("position_a", { ...body, status: "off" });
+    await deletePosition("position_a");
+
+    expect(get).toHaveBeenCalledWith("/positions", {
+      params: { query: { departmentId: "dept_a", chan: "social", status: "on", search: "Go", limit: 50 } },
+    });
+    expect(post).toHaveBeenCalledWith("/positions", { body });
+    expect(patch).toHaveBeenCalledWith("/positions/{positionId}", {
+      params: { path: { positionId: "position_a" } },
+      body: { ...body, status: "off" },
+    });
+    expect(del).toHaveBeenCalledWith("/positions/{positionId}", { params: { path: { positionId: "position_a" } } });
+  });
 });

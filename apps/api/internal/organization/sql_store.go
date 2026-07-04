@@ -458,7 +458,7 @@ func (r positionRow) listItem() (PositionListItem, error) {
 	return PositionListItem{
 		ID:               r.ID,
 		Name:             r.Name,
-		Department:       DepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
+		Department:       PositionDepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
 		Chan:             r.Chan,
 		Level:            r.Level,
 		Status:           r.Status,
