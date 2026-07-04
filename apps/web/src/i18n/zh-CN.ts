@@ -115,4 +115,73 @@ export const zhCN = {
     },
     unknownSource: "未知来源",
   },
+  departmentPosition: {
+    actions: {
+      view: "查看",
+    },
+    common: {
+      operations: "操作",
+      updatedAt: "更新时间",
+    },
+    dataScopeLabel: "当前数据权限:",
+    department: {
+      columns: {
+        name: "部门名称",
+        positionCount: "关联岗位",
+        resumeCount: "关联简历",
+      },
+      detailLabel: "部门详情",
+      positions: "关联岗位",
+    },
+    empty: {
+      departments: "暂无部门",
+      positions: "暂无岗位",
+      search: "暂无匹配结果",
+      value: "未填写",
+    },
+    errors: {
+      departmentDetail: "部门详情加载失败，请稍后重试。",
+      departments: "部门列表加载失败，请稍后重试。",
+      positionDetail: "岗位详情加载失败，请稍后重试。",
+      positions: "岗位列表加载失败，请稍后重试。",
+    },
+    filters: {
+      allChannels: "全部渠道",
+      allDepartments: "全部部门",
+      allStatuses: "全部状态",
+      channel: "渠道",
+      department: "部门",
+      search: "搜索",
+      searchPlaceholder: "搜索岗位或关键词",
+      status: "状态",
+    },
+    position: {
+      columns: {
+        channel: "渠道",
+        department: "所属部门",
+        implicitTagCount: "隐性标签",
+        keywordCount: "关键词",
+        level: "职级",
+        name: "岗位名称",
+        status: "状态",
+      },
+      detailLabel: "岗位详情",
+      sections: {
+        duties: "岗位职责",
+        implicitTags: "隐性标签",
+        keywords: "关键词",
+        must: "硬性要求",
+      },
+    },
+    status: {
+      off: "下架",
+      on: "在架",
+    },
+    subtitle: "按权限范围查看部门主数据和岗位 JD。",
+    tabs: {
+      departments: "部门管理",
+      positions: "岗位管理",
+    },
+    title: "部门与岗位",
+  },
 } as const;

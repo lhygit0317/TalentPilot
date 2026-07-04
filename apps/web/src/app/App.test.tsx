@@ -4,8 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
 const apiMocks = vi.hoisted(() => ({
+  getDepartment: vi.fn(),
   getCurrentUser: vi.fn(),
+  getPosition: vi.fn(),
   getResume: vi.fn(),
+  listDepartments: vi.fn(),
+  listPositions: vi.fn(),
   listResumes: vi.fn(),
   loginWithW3: vi.fn(),
   logout: vi.fn(),
@@ -65,6 +69,46 @@ describe("App", () => {
   beforeEach(() => {
     apiMocks.getCurrentUser.mockReset();
     apiMocks.getCurrentUser.mockResolvedValue({ data: undefined, error: undefined });
+    apiMocks.listDepartments.mockReset();
+    apiMocks.listDepartments.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: "dept_a",
+            name: "算力训练平台部",
+            positionCount: 1,
+            resumeCount: 12,
+            updatedAt: "2026-07-04T08:00:00Z",
+            canGet: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+      error: undefined,
+    });
+    apiMocks.listPositions.mockReset();
+    apiMocks.listPositions.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: "position_a",
+            name: "平台工程师",
+            department: { id: "dept_a", name: "算力训练平台部" },
+            chan: "social",
+            level: "P6",
+            status: "on",
+            keywordCount: 2,
+            implicitTagCount: 1,
+            updatedAt: "2026-07-04T08:00:00Z",
+            canGet: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+      error: undefined,
+    });
     apiMocks.loginWithW3.mockReset();
     apiMocks.logout.mockReset();
   });
@@ -232,6 +276,20 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "简历库" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "候选人" })).toBeInTheDocument();
+  });
+
+  it("renders the department position page when it is the active IAM route", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({
+      data: { ...hrbpSession, defaultRoute: "/departments-positions" },
+      error: undefined,
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "部门与岗位" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "部门名称" })).toBeInTheDocument();
+    expect(apiMocks.listDepartments).toHaveBeenCalled();
+    expect(apiMocks.listPositions).toHaveBeenCalled();
   });
 
   it("returns to the login form after logout", async () => {

@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { NavLink } from "../components/ui/nav-link";
 import { zhCN } from "../i18n/zh-CN";
 import { getCurrentUser, loginWithW3, logout } from "../api/client";
+import { DepartmentPositionPage } from "../department-position/DepartmentPositionPage";
 import { ResumeLibraryPage } from "../resume-library/ResumeLibraryPage";
 import "../styles/globals.css";
 
@@ -209,6 +210,8 @@ export function App() {
         ) : null}
         {activePage === "resume-library" ? (
           <ResumeLibraryPage session={session} />
+        ) : activePage === "departments-positions" ? (
+          <DepartmentPositionPage session={session} />
         ) : (
           <h1 className="text-2xl font-semibold tracking-normal">{routeLabels[activePage] ?? text.nav.resumeParse}</h1>
         )}

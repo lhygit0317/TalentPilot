@@ -115,4 +115,73 @@ export const enUS = {
     },
     unknownSource: "Unknown source",
   },
+  departmentPosition: {
+    actions: {
+      view: "View",
+    },
+    common: {
+      operations: "Actions",
+      updatedAt: "Updated at",
+    },
+    dataScopeLabel: "Current data scope:",
+    department: {
+      columns: {
+        name: "Department",
+        positionCount: "Positions",
+        resumeCount: "Resumes",
+      },
+      detailLabel: "Department detail",
+      positions: "Positions",
+    },
+    empty: {
+      departments: "No departments",
+      positions: "No positions",
+      search: "No matches",
+      value: "Not set",
+    },
+    errors: {
+      departmentDetail: "Failed to load department detail. Try again later.",
+      departments: "Failed to load departments. Try again later.",
+      positionDetail: "Failed to load position detail. Try again later.",
+      positions: "Failed to load positions. Try again later.",
+    },
+    filters: {
+      allChannels: "All channels",
+      allDepartments: "All departments",
+      allStatuses: "All statuses",
+      channel: "Channel",
+      department: "Department",
+      search: "Search",
+      searchPlaceholder: "Search position or keyword",
+      status: "Status",
+    },
+    position: {
+      columns: {
+        channel: "Channel",
+        department: "Department",
+        implicitTagCount: "Implicit tags",
+        keywordCount: "Keywords",
+        level: "Level",
+        name: "Position",
+        status: "Status",
+      },
+      detailLabel: "Position detail",
+      sections: {
+        duties: "Duties",
+        implicitTags: "Implicit tags",
+        keywords: "Keywords",
+        must: "Must-have",
+      },
+    },
+    status: {
+      off: "Off",
+      on: "On",
+    },
+    subtitle: "View department master data and position JDs within your scope.",
+    tabs: {
+      departments: "Departments",
+      positions: "Positions",
+    },
+    title: "Departments and positions",
+  },
 } as const;
