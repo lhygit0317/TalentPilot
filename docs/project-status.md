@@ -45,13 +45,13 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 | E2 | Resume parsing | Not Started | Resume library, positions, matching, jobs | `005-resume-parse-workspace.md` |
 | E3 | Resume recommendation and routing | Not Started | IAM, resumes, positions, notifications | `006-resume-recommendation-notification.md` |
 | E4 | Resume library | Done | `docs/specs/003-resume-library-import.md` implemented: permission-filtered list/detail/delete, import jobs, audit coverage, API routes, generated OpenAPI/client wrappers, and frontend list/search/detail/import/delete workflows. Verification: `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make test-api`, `CI=true pnpm --filter @talentpilot/web test -- --run`, `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make openapi-check`, `make client-check`, `make typecheck`, `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make lint`, `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make build`. Playwright remains outside the passing gate; `make test-e2e` is still reserved. | Use E4 as dependency for E5/E2/E3/E7. |
-| E5 | Department and position management | In Progress | `docs/specs/004-position-department-management.md` drafted; depends on IAM data scope and completed E4 department-resume behavior. | Write and execute E5 implementation plan. |
+| E5 | Department and position management | In Progress | `docs/specs/004-position-department-management.md` and `docs/superpowers/plans/2026-07-04-e5-department-position-management-implementation.md` drafted; depends on IAM data scope and completed E4 department-resume behavior. | Execute E5 implementation plan. |
 | E6 | User and role management | Not Started | IAM, user list, role list | `007-user-role-management.md` |
 | E7 | Notifications | Not Started | Recommendation events, notification service | `006-resume-recommendation-notification.md` |
 | E8 | Custom role management | Not Started | IAM model, permissions, RoleRelation validation | `008-custom-role-management.md` |
 
 ## Current Recommended Order
 
-1. Write and execute the E5 implementation plan from `docs/specs/004-position-department-management.md`.
+1. Execute `docs/superpowers/plans/2026-07-04-e5-department-position-management-implementation.md`.
 2. Plan E2 after E5 exposes position data needed by parsing and recommendation workflows.
 3. Keep `make test-e2e` reserved until Playwright is installed and configured.
