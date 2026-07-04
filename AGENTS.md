@@ -2,14 +2,14 @@
 
 ## Read This First
 
-This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is IAM runtime implemented and verified, with E4 Resume Library implementation next.
+This repository is the TalentPilot recruiting intelligence assistant for the Computing Power Business Unit. The product requirements live in [PRD.md](PRD.md). The current work phase is E4 Resume Library implemented and verified, with E5 Department/Position or E2 Resume Parsing planning next.
 
 Agents must read this file before making changes. If project-wide consensus changes, update this file in the same change set.
 
 ## Current Project Phase
 
-- Phase: IAM runtime implemented and verified; E4 Resume Library SPEC and implementation plan are ready for execution.
-- Current source of truth: [docs/specs/003-resume-library-import.md](docs/specs/003-resume-library-import.md) and [docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md](docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md), building on implemented IAM behavior from [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md), [docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md](docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md), and [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md).
+- Phase: E4 Resume Library implemented and verified; E5 Department/Position or E2 Resume Parsing planning is next.
+- Current source of truth: implemented E4 behavior from [docs/specs/003-resume-library-import.md](docs/specs/003-resume-library-import.md) and [docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md](docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md), building on implemented IAM behavior from [docs/specs/002-iam-permission-model.md](docs/specs/002-iam-permission-model.md), [docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md](docs/superpowers/plans/2026-07-03-iam-permission-model-implementation.md), and [docs/specs/001-auth-session-w3.md](docs/specs/001-auth-session-w3.md).
 - Current status checklist: [docs/project-status.md](docs/project-status.md).
 - PRD scope: W3 login, IAM, resume parsing, recommendation, resume library, department/position management, user/role management, notifications, custom role management.
 

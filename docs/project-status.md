@@ -44,7 +44,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 | IAM | Permission model foundation | Done | `docs/specs/002-iam-permission-model.md` implemented: preset role seeds, Permission whitelist, RoleRelation expansion, SQL principal loading, `/me` IAM fields, backend guard, mutation audit/cache hooks, frontend shell scope display, OpenAPI/client generation. Verification: `make test-api`, `make test-web`, `make openapi-check`, `make client-check`, `make typecheck`, `make lint`, `make build`, `git diff --check`. | Use as authorization and data-scope foundation for E4/E5/E2/E3/E6/E8. |
 | E2 | Resume parsing | Not Started | Resume library, positions, matching, jobs | `005-resume-parse-workspace.md` |
 | E3 | Resume recommendation and routing | Not Started | IAM, resumes, positions, notifications | `006-resume-recommendation-notification.md` |
-| E4 | Resume library | In Progress | `docs/specs/003-resume-library-import.md` drafted; `docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md` drafted; IAM runtime prerequisite is implemented. | Execute E4 implementation plan. |
+| E4 | Resume library | Done | `docs/specs/003-resume-library-import.md` implemented: permission-filtered list/detail/delete, import jobs, audit coverage, API routes, generated OpenAPI/client wrappers, and frontend list/search/detail/import/delete workflows. Verification: `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make test-api`, `CI=true pnpm --filter @talentpilot/web test -- --run`, `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make openapi-check`, `make client-check`, `make typecheck`, `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make lint`, `PATH=/Users/lhy/.cache/codex-go/go1.26.4-darwin-arm64/go/bin:$PATH make build`. Playwright remains outside the passing gate; `make test-e2e` is still reserved. | Use E4 as dependency for E5/E2/E3/E7. |
 | E5 | Department and position management | Not Started | IAM, departments, positions | `004-position-department-management.md` |
 | E6 | User and role management | Not Started | IAM, user list, role list | `007-user-role-management.md` |
 | E7 | Notifications | Not Started | Recommendation events, notification service | `006-resume-recommendation-notification.md` |
@@ -52,5 +52,5 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 ## Current Recommended Order
 
-1. Execute `docs/superpowers/plans/2026-07-04-e4-resume-library-implementation.md`.
-2. Plan E5/E2 after E4 is implemented and verified.
+1. Plan E5 department/position management or E2 resume parsing workspace using completed E4 and IAM behavior.
+2. Keep `make test-e2e` reserved until Playwright is installed and configured.
