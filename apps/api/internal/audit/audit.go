@@ -22,6 +22,9 @@ const (
 	EventDepartmentCreated         EventType = "organization.department_created"
 	EventDepartmentUpdated         EventType = "organization.department_updated"
 	EventDepartmentDeleted         EventType = "organization.department_deleted"
+	EventPositionCreated           EventType = "organization.position_created"
+	EventPositionUpdated           EventType = "organization.position_updated"
+	EventPositionDeleted           EventType = "organization.position_deleted"
 )
 
 type Event struct {
