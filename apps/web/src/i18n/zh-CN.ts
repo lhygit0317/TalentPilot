@@ -81,14 +81,33 @@ export const zhCN = {
     },
     emptyValue: "未解析到",
     errors: {
+      codes: {
+        JOB_ACCESS_DENIED: "无权查看导入任务。",
+        JOB_TIMEOUT: "导入任务仍在处理中，请稍后刷新。",
+        RESUME_DELETE_FAILED: "删除简历失败，请稍后重试。",
+        RESUME_IMPORT_FAILED: "简历导入失败，请稍后重试。",
+        RESUME_IMPORT_PARSE_FAILED: "简历解析失败，请重新上传 PDF。",
+      },
       detail: "简历详情加载失败，请稍后重试。",
+      fileTooLarge: "文件不能超过 10MB",
+      importFailed: "简历导入失败，请稍后重试。",
       list: "简历列表加载失败，请稍后重试。",
+      unsupportedType: "仅支持 PDF 文件",
+    },
+    import: {
+      batchLabel: "批量导入简历",
+      singleLabel: "单份导入",
     },
     noDataScope: "暂无部门范围",
     searchLabel: "搜索",
     searchPlaceholder: "搜索姓名、岗位或关键词",
     subtitle: "按权限范围查看候选人池。",
     title: "简历库",
+    toasts: {
+      batchImported: (count: number, channel: string) => `已批量导入 ${count} 份${channel}简历`,
+      deleted: "已删除该简历",
+      singleImported: (name: string) => `✓ 已导入「${name}」并加入简历库`,
+    },
     unknownSource: "未知来源",
   },
 } as const;

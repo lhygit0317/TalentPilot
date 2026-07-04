@@ -81,14 +81,33 @@ export const enUS = {
     },
     emptyValue: "Not parsed",
     errors: {
+      codes: {
+        JOB_ACCESS_DENIED: "You cannot view this import job.",
+        JOB_TIMEOUT: "The import job is still running. Refresh later.",
+        RESUME_DELETE_FAILED: "Failed to delete the resume. Try again later.",
+        RESUME_IMPORT_FAILED: "Failed to import the resume. Try again later.",
+        RESUME_IMPORT_PARSE_FAILED: "Resume parsing failed. Upload the PDF again.",
+      },
       detail: "Failed to load resume details. Try again later.",
+      fileTooLarge: "File must be 10MB or smaller",
+      importFailed: "Failed to import the resume. Try again later.",
       list: "Failed to load resumes. Try again later.",
+      unsupportedType: "Only PDF files are supported",
+    },
+    import: {
+      batchLabel: "Batch import resumes",
+      singleLabel: "Single import",
     },
     noDataScope: "No department scope",
     searchLabel: "Search",
     searchPlaceholder: "Search name, position, or keyword",
     subtitle: "View candidates within your permission scope.",
     title: "Resume library",
+    toasts: {
+      batchImported: (count: number, channel: string) => `Imported ${count} ${channel} resumes`,
+      deleted: "Resume deleted",
+      singleImported: (name: string) => `✓ Imported "${name}" into the resume library`,
+    },
     unknownSource: "Unknown source",
   },
 } as const;

@@ -45,6 +45,27 @@ export type ResumeDetail = ResumeListItem & {
   profile: ResumeProfile;
 };
 
+export type JobResult = {
+  errorCode?: string;
+  fileName: string;
+  name?: string;
+  resumeId?: string;
+  status: string;
+};
+
+export type JobStatus = {
+  id?: string;
+  jobId?: string;
+  results: JobResult[] | null;
+  status: string;
+  summary: {
+    failed: number;
+    succeeded: number;
+    total: number;
+  };
+  type: string;
+};
+
 export type ResumeLibrarySession = {
   dataScope: {
     allDepartments: boolean;

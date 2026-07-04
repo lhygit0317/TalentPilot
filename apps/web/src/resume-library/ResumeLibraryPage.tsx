@@ -1,11 +1,18 @@
 import * as React from "react";
-import { getResume, listResumes } from "../api/client";
+import { deleteResume, getJob, getResume, importResume, importResumesBatch, listResumes } from "../api/client";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { zhCN } from "../i18n/zh-CN";
 import { highlightLiteral } from "./highlight";
-import type { ResumeChannel, ResumeDetail, ResumeLibrarySession, ResumeListItem, ResumeListResponse } from "./types";
+import type {
+  JobStatus,
+  ResumeChannel,
+  ResumeDetail,
+  ResumeLibrarySession,
+  ResumeListItem,
+  ResumeListResponse,
+} from "./types";
 
 const text = zhCN.resumeLibrary;
 
@@ -26,6 +33,8 @@ const columnLabels = [
   text.columns.operations,
 ];
 
+const maxImportBytes = 10 * 1024 * 1024;
+
 type ResumeLibraryPageProps = {
   session: ResumeLibrarySession;
 };
@@ -36,16 +45,15 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
   const [list, setList] = React.useState<ResumeListResponse | null>(null);
   const [detail, setDetail] = React.useState<ResumeDetail | null>(null);
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [successMessage, setSuccessMessage] = React.useState("");
 
-  React.useEffect(() => {
-    let isCurrent = true;
-
-    async function loadResumes() {
+  const loadResumes = React.useCallback(
+    async (isCurrent: () => boolean = () => true) => {
       const query = { chan: channel, search: search.trim() || undefined };
 
       try {
         const { data, error } = await listResumes(query);
-        if (!isCurrent) {
+        if (!isCurrent()) {
           return;
         }
         if (error || !data) {
@@ -55,30 +63,125 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
         setList(data);
         setErrorMessage("");
       } catch {
-        if (isCurrent) {
+        if (isCurrent()) {
           setErrorMessage(text.errors.list);
         }
       }
-    }
+    },
+    [channel, search],
+  );
 
-    void loadResumes();
+  React.useEffect(() => {
+    let isCurrent = true;
+
+    void loadResumes(() => isCurrent);
 
     return () => {
       isCurrent = false;
     };
-  }, [channel, search]);
+  }, [loadResumes]);
 
   async function handleOpenDetail(resumeId: string) {
     try {
       const { data, error } = await getResume(resumeId);
       if (error || !data) {
         setErrorMessage(text.errors.detail);
+        setSuccessMessage("");
         return;
       }
       setDetail(data);
       setErrorMessage("");
     } catch {
       setErrorMessage(text.errors.detail);
+      setSuccessMessage("");
+    }
+  }
+
+  async function handleSingleImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) {
+      return;
+    }
+
+    const validationError = validatePDF(file);
+    if (validationError) {
+      setErrorMessage(validationError);
+      setSuccessMessage("");
+      return;
+    }
+
+    const body = buildImportFormData(channel, session);
+    body.append("file", file);
+
+    try {
+      const { data, error } = await importResume(body);
+      if (error || !data) {
+        throw new Error(readProblemCode(error) || "RESUME_IMPORT_FAILED");
+      }
+      const job = await waitForJob(readJobId(data));
+      if (job.status === "failed") {
+        throw new Error(readJobErrorCode(job));
+      }
+      const importedName = job.results?.find((result) => result.status === "succeeded")?.name || file.name;
+      setSuccessMessage(text.toasts.singleImported(importedName));
+      setErrorMessage("");
+      await loadResumes();
+    } catch (error) {
+      setErrorMessage(formatWorkflowError(error));
+      setSuccessMessage("");
+    }
+  }
+
+  async function handleBatchImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []);
+    event.currentTarget.value = "";
+    if (files.length === 0) {
+      return;
+    }
+
+    const validationError = files.map(validatePDF).find(Boolean);
+    if (validationError) {
+      setErrorMessage(validationError);
+      setSuccessMessage("");
+      return;
+    }
+
+    const body = buildImportFormData(channel, session);
+    for (const file of files) {
+      body.append("files", file);
+    }
+
+    try {
+      const { data, error } = await importResumesBatch(body);
+      if (error || !data) {
+        throw new Error(readProblemCode(error) || "RESUME_IMPORT_FAILED");
+      }
+      const job = await waitForJob(readJobId(data));
+      if (job.status === "failed" && job.summary.succeeded === 0) {
+        throw new Error(readJobErrorCode(job));
+      }
+      setSuccessMessage(text.toasts.batchImported(job.summary.succeeded, channelLabels[channel]));
+      setErrorMessage("");
+      await loadResumes();
+    } catch (error) {
+      setErrorMessage(formatWorkflowError(error));
+      setSuccessMessage("");
+    }
+  }
+
+  async function handleDeleteResume(resumeId: string) {
+    try {
+      const { error } = await deleteResume(resumeId);
+      if (error) {
+        throw new Error(readProblemCode(error) || "RESUME_DELETE_FAILED");
+      }
+      setSuccessMessage(text.toasts.deleted);
+      setErrorMessage("");
+      await loadResumes();
+    } catch (error) {
+      setErrorMessage(formatWorkflowError(error));
+      setSuccessMessage("");
     }
   }
 
@@ -86,6 +189,7 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
   const dataScopeSummary = list?.dataScopeSummary || session.dataScope.departments.map((department) => department.name).join("、");
   const rows = list?.items ?? [];
   const emptyMessage = search.trim() ? text.empty.search : text.empty.channel;
+  const canImport = hasPermissions(session.permissions, ["Resume.Create", "DepartmentResume.Create"]);
 
   return (
     <div className="grid gap-6">
@@ -125,9 +229,25 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
         </Field>
       </div>
 
+      {canImport ? (
+        <div className="grid gap-3 border border-white/10 p-3 md:grid-cols-2">
+          <Field label={text.import.singleLabel}>
+            <Input onChange={handleSingleImport} type="file" />
+          </Field>
+          <Field label={text.import.batchLabel}>
+            <Input multiple onChange={handleBatchImport} type="file" />
+          </Field>
+        </div>
+      ) : null}
+
       {errorMessage ? (
         <p className="border border-red-400/30 bg-red-400/10 px-3 py-2 text-sm text-red-200" role="alert">
           {errorMessage}
+        </p>
+      ) : null}
+      {successMessage ? (
+        <p className="border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-accent" role="status">
+          {successMessage}
         </p>
       ) : null}
 
@@ -166,7 +286,7 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
                         </Button>
                       ) : null}
                       {resume.canDelete ? (
-                        <Button disabled type="button">
+                        <Button onClick={() => void handleDeleteResume(resume.id)} type="button">
                           {text.actions.delete}
                         </Button>
                       ) : null}
@@ -301,6 +421,69 @@ function preferredChannel(channels: string[]): ResumeChannel {
     return "campus";
   }
   return "social";
+}
+
+function validatePDF(file: File) {
+  if (file.size > maxImportBytes) {
+    return text.errors.fileTooLarge;
+  }
+  if (file.type !== "application/pdf" && !file.name.toLocaleLowerCase().endsWith(".pdf")) {
+    return text.errors.unsupportedType;
+  }
+  return "";
+}
+
+function buildImportFormData(channel: ResumeChannel, session: ResumeLibrarySession) {
+  const body = new FormData();
+  body.append("chan", channel);
+
+  const targetDepartment = session.dataScope.departments.find((department) => department.id !== "__system__");
+  if (targetDepartment) {
+    body.append("targetDepartmentId", targetDepartment.id);
+  }
+
+  return body;
+}
+
+async function waitForJob(jobId: string): Promise<JobStatus> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const { data, error } = await getJob(jobId);
+    if (error || !data) {
+      throw new Error(readProblemCode(error) || "JOB_ACCESS_DENIED");
+    }
+
+    if (data.status === "succeeded" || data.status === "failed") {
+      return data;
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
+  }
+
+  throw new Error("JOB_TIMEOUT");
+}
+
+function readJobId(data: { id?: string; jobId?: string }) {
+  return data.jobId || data.id || "";
+}
+
+function readJobErrorCode(job: JobStatus) {
+  return job.results?.find((result) => result.errorCode)?.errorCode || "RESUME_IMPORT_FAILED";
+}
+
+function readProblemCode(error: unknown) {
+  if (error && typeof error === "object" && "code" in error && typeof error.code === "string") {
+    return error.code;
+  }
+  return "";
+}
+
+function formatWorkflowError(error: unknown) {
+  const code = error instanceof Error ? error.message : "";
+  return text.errors.codes[code as keyof typeof text.errors.codes] ?? text.errors.importFailed;
+}
+
+function hasPermissions(permissions: string[], required: string[]) {
+  return required.every((permission) => permissions.includes(permission));
 }
 
 function isResumeChannel(value: string): value is ResumeChannel {
