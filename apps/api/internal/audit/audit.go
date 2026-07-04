@@ -19,6 +19,9 @@ const (
 	EventResumeImportSucceeded     EventType = "resume.import_succeeded"
 	EventResumeImportFailed        EventType = "resume.import_failed"
 	EventResumeDeleted             EventType = "resume.deleted"
+	EventDepartmentCreated         EventType = "organization.department_created"
+	EventDepartmentUpdated         EventType = "organization.department_updated"
+	EventDepartmentDeleted         EventType = "organization.department_deleted"
 )
 
 type Event struct {
