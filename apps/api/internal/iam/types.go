@@ -63,6 +63,14 @@ type RoleBinding struct {
 	RoleID       string
 }
 
+type UserDepartmentRoleInput struct {
+	ID           string
+	UserID       string
+	DepartmentID string
+	RoleID       string
+	ActorUserID  string
+}
+
 type Snapshot struct {
 	User          User
 	Departments   []Department

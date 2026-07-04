@@ -106,6 +106,34 @@ func (f *fakeClosureStore) UsersForRoleClosure(context.Context, []string) ([]str
 	return f.users, nil
 }
 
+func (f *fakeClosureStore) LoadRoleRelations(context.Context) ([]iam.RoleRelation, error) {
+	return nil, nil
+}
+
+func (f *fakeClosureStore) CreateUserDepartmentRole(context.Context, iam.UserDepartmentRoleInput) error {
+	return nil
+}
+
+func (f *fakeClosureStore) DeleteUserDepartmentRole(context.Context, string) (iam.RoleBinding, error) {
+	return iam.RoleBinding{}, nil
+}
+
+func (f *fakeClosureStore) ReplaceRolePermissions(context.Context, string, []iam.PermissionGrant) error {
+	return nil
+}
+
+func (f *fakeClosureStore) CreateRoleRelation(context.Context, iam.RoleRelation) error {
+	return nil
+}
+
+func (f *fakeClosureStore) DeleteRoleRelation(context.Context, string) (iam.RoleRelation, error) {
+	return iam.RoleRelation{}, nil
+}
+
+func (f *fakeClosureStore) WithTransaction(ctx context.Context, fn func(iam.Store) error) error {
+	return fn(f)
+}
+
 type spyPrincipalCache struct {
 	deleted []string
 	cleared bool

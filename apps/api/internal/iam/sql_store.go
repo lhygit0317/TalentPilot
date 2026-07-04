@@ -3,7 +3,9 @@ package iam
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -14,6 +16,12 @@ type SQLStore struct {
 
 func NewSQLStore(db *gorm.DB) *SQLStore {
 	return &SQLStore{db: db}
+}
+
+func (s *SQLStore) WithTransaction(ctx context.Context, fn func(Store) error) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(&SQLStore{db: tx})
+	})
 }
 
 func (s *SQLStore) LoadSnapshot(ctx context.Context, userID string) (Snapshot, error) {
@@ -37,7 +45,7 @@ func (s *SQLStore) LoadSnapshot(ctx context.Context, userID string) (Snapshot, e
 	if err != nil {
 		return Snapshot{}, err
 	}
-	relations, err := s.loadRoleRelations(ctx)
+	relations, err := s.LoadRoleRelations(ctx)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -52,7 +60,7 @@ func (s *SQLStore) LoadSnapshot(ctx context.Context, userID string) (Snapshot, e
 }
 
 func (s *SQLStore) UsersForRoleClosure(ctx context.Context, roleIDs []string) ([]string, error) {
-	relations, err := s.loadRoleRelations(ctx)
+	relations, err := s.LoadRoleRelations(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +109,93 @@ func (s *SQLStore) UsersForRoleClosure(ctx context.Context, roleIDs []string) ([
 	}
 	sort.Strings(userIDs)
 	return userIDs, nil
+}
+
+func (s *SQLStore) CreateUserDepartmentRole(ctx context.Context, input UserDepartmentRoleInput) error {
+	id := input.ID
+	if id == "" {
+		id = stableMutationID("user_department_role", input.UserID, input.DepartmentID, input.RoleID)
+	}
+	return s.db.WithContext(ctx).Exec(`
+		INSERT INTO user_department_roles (id, user_id, department_id, role_id, created_at, created_by)
+		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+	`, id, input.UserID, input.DepartmentID, input.RoleID, input.ActorUserID).Error
+}
+
+func (s *SQLStore) DeleteUserDepartmentRole(ctx context.Context, id string) (RoleBinding, error) {
+	var binding RoleBinding
+	if err := s.db.WithContext(ctx).Raw(`
+		SELECT id, user_id, department_id, role_id
+		FROM user_department_roles
+		WHERE id = ?
+	`, id).Scan(&binding).Error; err != nil {
+		return RoleBinding{}, err
+	}
+	if binding.ID == "" {
+		return RoleBinding{}, ErrPrincipalNotFound
+	}
+	if err := s.db.WithContext(ctx).Exec(`
+		DELETE FROM user_department_roles
+		WHERE id = ?
+	`, id).Error; err != nil {
+		return RoleBinding{}, err
+	}
+	return binding, nil
+}
+
+func (s *SQLStore) ReplaceRolePermissions(ctx context.Context, roleID string, grants []PermissionGrant) error {
+	if err := s.db.WithContext(ctx).Exec(`
+		DELETE FROM permissions
+		WHERE role_id = ?
+	`, roleID).Error; err != nil {
+		return err
+	}
+	for _, grant := range grants {
+		rawConditions, err := encodeAttributeConditions(grant.AttributeConditions)
+		if err != nil {
+			return err
+		}
+		id := stableMutationID("permission", roleID, string(grant.Resource), string(grant.Action), rawConditions)
+		if err := s.db.WithContext(ctx).Exec(`
+			INSERT INTO permissions (id, role_id, resource, action, attribute_conditions, created_at)
+			VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`, id, roleID, grant.Resource, grant.Action, rawConditions).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SQLStore) CreateRoleRelation(ctx context.Context, relation RoleRelation) error {
+	id := relation.ID
+	if id == "" {
+		id = stableMutationID("role_relation", relation.ParentRoleID, relation.ChildRoleID)
+	}
+	return s.db.WithContext(ctx).Exec(`
+		INSERT INTO role_relations (id, parent_role_id, child_role_id, created_at)
+		VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+	`, id, relation.ParentRoleID, relation.ChildRoleID).Error
+}
+
+func (s *SQLStore) DeleteRoleRelation(ctx context.Context, id string) (RoleRelation, error) {
+	var relation RoleRelation
+	if err := s.db.WithContext(ctx).Raw(`
+		SELECT id, parent_role_id, child_role_id
+		FROM role_relations
+		WHERE id = ?
+	`, id).Scan(&relation).Error; err != nil {
+		return RoleRelation{}, err
+	}
+	if relation.ID == "" {
+		return RoleRelation{}, ErrPermissionNotFound
+	}
+	if err := s.db.WithContext(ctx).Exec(`
+		DELETE FROM role_relations
+		WHERE id = ?
+	`, id).Error; err != nil {
+		return RoleRelation{}, err
+	}
+	return relation, nil
 }
 
 func (s *SQLStore) loadUser(ctx context.Context, userID string) (User, error) {
@@ -208,7 +303,7 @@ func (s *SQLStore) loadPermissions(ctx context.Context) ([]PermissionGrant, erro
 	return grants, nil
 }
 
-func (s *SQLStore) loadRoleRelations(ctx context.Context) ([]RoleRelation, error) {
+func (s *SQLStore) LoadRoleRelations(ctx context.Context) ([]RoleRelation, error) {
 	var rows []struct {
 		ID           string
 		ParentRoleID string `gorm:"column:parent_role_id"`
@@ -228,6 +323,17 @@ func (s *SQLStore) loadRoleRelations(ctx context.Context) ([]RoleRelation, error
 	return relations, nil
 }
 
+func encodeAttributeConditions(conditions AttributeConditions) (string, error) {
+	raw, err := json.Marshal(conditions)
+	if err != nil {
+		return "", err
+	}
+	if string(raw) == "null" {
+		return "{}", nil
+	}
+	return string(raw), nil
+}
+
 func decodeAttributeConditions(raw string) (AttributeConditions, error) {
 	if raw == "" {
 		return AttributeConditions{}, nil
@@ -237,4 +343,38 @@ func decodeAttributeConditions(raw string) (AttributeConditions, error) {
 		return AttributeConditions{}, err
 	}
 	return conditions, nil
+}
+
+func stableMutationID(prefix string, parts ...string) string {
+	slugParts := make([]string, 0, len(parts)+1)
+	slugParts = append(slugParts, prefix)
+	for _, part := range parts {
+		slugParts = append(slugParts, stableIDPart(part))
+	}
+	return fmt.Sprintf("__%s__", strings.Join(slugParts, "_"))
+}
+
+func stableIDPart(value string) string {
+	replacer := strings.NewReplacer(
+		"__role_", "",
+		"__", "_",
+		".", "_",
+		"-", "_",
+		" ", "_",
+		"{", "_",
+		"}", "_",
+		"[", "_",
+		"]", "_",
+		"\"", "",
+		":", "_",
+		";", "_",
+		"=", "_",
+		",", "_",
+	)
+	value = replacer.Replace(strings.ToLower(value))
+	value = strings.Trim(value, "_")
+	if value == "" {
+		return "empty"
+	}
+	return value
 }
