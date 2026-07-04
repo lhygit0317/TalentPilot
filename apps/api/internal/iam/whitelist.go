@@ -13,8 +13,11 @@ func PermissionWhitelist() map[Resource]map[Action]ConditionAllowance {
 			ActionGet:  {Self: true},
 		},
 		ResourceDepartment: {
-			ActionList: {},
-			ActionGet:  {},
+			ActionList:   {},
+			ActionGet:    {},
+			ActionCreate: {},
+			ActionUpdate: {},
+			ActionDelete: {},
 		},
 		ResourcePosition: {
 			ActionList:   {},

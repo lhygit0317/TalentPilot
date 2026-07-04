@@ -30,6 +30,30 @@ func TestGlobalScopeRoleSet(t *testing.T) {
 	}
 }
 
+func TestOnlySuperAdminPresetGetsDepartmentWrites(t *testing.T) {
+	matrix := iam.PresetRolePermissions()
+	for roleID, grants := range matrix {
+		hasWrite := hasGrant(grants, iam.ResourceDepartment, iam.ActionCreate) ||
+			hasGrant(grants, iam.ResourceDepartment, iam.ActionUpdate) ||
+			hasGrant(grants, iam.ResourceDepartment, iam.ActionDelete)
+		if roleID == iam.RoleSuperAdmin && !hasWrite {
+			t.Fatalf("super admin should have department writes")
+		}
+		if roleID != iam.RoleSuperAdmin && hasWrite {
+			t.Fatalf("%s should not have department writes", roleID)
+		}
+	}
+}
+
+func hasGrant(grants []iam.PermissionGrant, resource iam.Resource, action iam.Action) bool {
+	for _, grant := range grants {
+		if grant.Resource == resource && grant.Action == action {
+			return true
+		}
+	}
+	return false
+}
+
 func assertGrant(t *testing.T, matrix map[string][]iam.PermissionGrant, roleID string, resource iam.Resource, action iam.Action, conditions iam.AttributeConditions) {
 	t.Helper()
 	for _, grant := range matrix[roleID] {

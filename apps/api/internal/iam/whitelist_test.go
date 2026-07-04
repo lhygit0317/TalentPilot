@@ -27,3 +27,16 @@ func TestAttributeConditionValidation(t *testing.T) {
 		t.Fatalf("expected invalid attribute condition, got %v", err)
 	}
 }
+
+func TestDepartmentWritePermissionsAreWhitelisted(t *testing.T) {
+	for _, action := range []iam.Action{iam.ActionCreate, iam.ActionUpdate, iam.ActionDelete} {
+		err := iam.ValidatePermissionGrant(iam.PermissionGrant{
+			RoleID:   iam.RoleSuperAdmin,
+			Resource: iam.ResourceDepartment,
+			Action:   action,
+		})
+		if err != nil {
+			t.Fatalf("Department.%s should be whitelisted: %v", action, err)
+		}
+	}
+}

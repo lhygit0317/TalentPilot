@@ -213,6 +213,10 @@ func assertPresetIAMSeeded(t *testing.T, database *sql.DB) {
 	assertCount(t, database, "permissions", "role_id = '__role_social_owner__' AND resource = 'DepartmentResume' AND action = 'Delete'", 1)
 	assertCount(t, database, "permissions", "role_id = '__role_campus_owner__' AND resource = 'DepartmentResume' AND action = 'Delete'", 1)
 	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Position' AND action = 'Delete'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Department' AND action = 'Create'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Department' AND action = 'Update'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Department' AND action = 'Delete'", 1)
+	assertCount(t, database, "permissions", "role_id != '__role_super_admin__' AND resource = 'Department' AND action IN ('Create','Update','Delete')", 0)
 }
 
 func assertAuthSessionConstraints(t *testing.T, database *sql.DB) {

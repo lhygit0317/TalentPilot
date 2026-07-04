@@ -37,6 +37,21 @@ const (
 	ResumeDeleteDenied                   Code = "RESUME_DELETE_DENIED"
 	JobNotFound                          Code = "JOB_NOT_FOUND"
 	JobAccessDenied                      Code = "JOB_ACCESS_DENIED"
+	DepartmentNotFound                   Code = "DEPARTMENT_NOT_FOUND"
+	DepartmentNameRequired               Code = "DEPARTMENT_NAME_REQUIRED"
+	DepartmentNameDuplicate              Code = "DEPARTMENT_NAME_DUPLICATE"
+	DepartmentDeleteHasRelations         Code = "DEPARTMENT_DELETE_HAS_RELATIONS"
+	DepartmentSystemProtected            Code = "DEPARTMENT_SYSTEM_PROTECTED"
+	PositionNotFound                     Code = "POSITION_NOT_FOUND"
+	PositionNameRequired                 Code = "POSITION_NAME_REQUIRED"
+	PositionDepartmentRequired           Code = "POSITION_DEPARTMENT_REQUIRED"
+	PositionDepartmentInvalid            Code = "POSITION_DEPARTMENT_INVALID"
+	PositionInvalidChannel               Code = "POSITION_INVALID_CHANNEL"
+	PositionInvalidStatus                Code = "POSITION_INVALID_STATUS"
+	PositionDuplicateKeyword             Code = "POSITION_DUPLICATE_KEYWORD"
+	PositionDuplicateImplicitTag         Code = "POSITION_DUPLICATE_IMPLICIT_TAG"
+	PositionInvalidImplicitWeight        Code = "POSITION_INVALID_IMPLICIT_WEIGHT"
+	PositionDeleteHasHistory             Code = "POSITION_DELETE_HAS_HISTORY"
 	ValidationFailed                     Code = "VALIDATION_FAILED"
 	Internal                             Code = "INTERNAL_ERROR"
 )
@@ -137,9 +152,9 @@ func statusForCode(code Code) int {
 		return http.StatusGatewayTimeout
 	case PermissionDenied, ResumeDeleteDenied, JobAccessDenied:
 		return http.StatusForbidden
-	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound:
+	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound:
 		return http.StatusNotFound
-	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile:
+	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -204,6 +219,36 @@ func defaultMessage(code Code) string {
 		return "任务不存在"
 	case JobAccessDenied:
 		return "无权查看该任务"
+	case DepartmentNotFound:
+		return "部门不存在"
+	case DepartmentNameRequired:
+		return "部门名称不能为空"
+	case DepartmentNameDuplicate:
+		return "部门名称已存在"
+	case DepartmentDeleteHasRelations:
+		return "部门仍有关联数据，不能删除"
+	case DepartmentSystemProtected:
+		return "系统部门不能修改或删除"
+	case PositionNotFound:
+		return "岗位不存在"
+	case PositionNameRequired:
+		return "岗位名称不能为空"
+	case PositionDepartmentRequired:
+		return "请选择岗位所属部门"
+	case PositionDepartmentInvalid:
+		return "岗位所属部门不存在或无权访问"
+	case PositionInvalidChannel:
+		return "岗位渠道不合法"
+	case PositionInvalidStatus:
+		return "岗位状态不合法"
+	case PositionDuplicateKeyword:
+		return "岗位关键词不能重复"
+	case PositionDuplicateImplicitTag:
+		return "隐性标签不能重复"
+	case PositionInvalidImplicitWeight:
+		return "隐性标签权重不合法"
+	case PositionDeleteHasHistory:
+		return "岗位已有解析或推荐历史，请使用下架"
 	case ValidationFailed:
 		return "请求参数不合法"
 	default:

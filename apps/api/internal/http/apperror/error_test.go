@@ -92,6 +92,38 @@ func TestResumeLibraryErrorCodesUseStableMessages(t *testing.T) {
 	}
 }
 
+func TestOrganizationErrorCodesUseStableMessages(t *testing.T) {
+	cases := []struct {
+		code   Code
+		status int
+	}{
+		{DepartmentNotFound, http.StatusNotFound},
+		{DepartmentNameRequired, http.StatusUnprocessableEntity},
+		{DepartmentNameDuplicate, http.StatusUnprocessableEntity},
+		{DepartmentDeleteHasRelations, http.StatusUnprocessableEntity},
+		{DepartmentSystemProtected, http.StatusUnprocessableEntity},
+		{PositionNotFound, http.StatusNotFound},
+		{PositionNameRequired, http.StatusUnprocessableEntity},
+		{PositionDepartmentRequired, http.StatusUnprocessableEntity},
+		{PositionDepartmentInvalid, http.StatusUnprocessableEntity},
+		{PositionInvalidChannel, http.StatusUnprocessableEntity},
+		{PositionInvalidStatus, http.StatusUnprocessableEntity},
+		{PositionDuplicateKeyword, http.StatusUnprocessableEntity},
+		{PositionDuplicateImplicitTag, http.StatusUnprocessableEntity},
+		{PositionInvalidImplicitWeight, http.StatusUnprocessableEntity},
+		{PositionDeleteHasHistory, http.StatusUnprocessableEntity},
+	}
+	for _, tc := range cases {
+		problem := NewProblem(tc.code, "", "req_org", nil)
+		if problem.GetStatus() != tc.status {
+			t.Fatalf("%s status=%d want %d", tc.code, problem.GetStatus(), tc.status)
+		}
+		if problem.Message == "" || problem.RequestID != "req_org" {
+			t.Fatalf("expected message and request id for %s: %#v", tc.code, problem)
+		}
+	}
+}
+
 func TestDetailsFromErrorsDoesNotExposeInvalidValues(t *testing.T) {
 	detail := &huma.ErrorDetail{
 		Message:  "expected string",
