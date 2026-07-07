@@ -18,6 +18,7 @@ const (
 	EventRoleRelationDeleted       EventType = "iam.role_relation_deleted"
 	EventResumeImportSucceeded     EventType = "resume.import_succeeded"
 	EventResumeImportFailed        EventType = "resume.import_failed"
+	EventResumeParsed              EventType = "resume.parsed"
 	EventResumeDeleted             EventType = "resume.deleted"
 	EventDepartmentCreated         EventType = "organization.department_created"
 	EventDepartmentUpdated         EventType = "organization.department_updated"

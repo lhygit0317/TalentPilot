@@ -3,11 +3,16 @@ package matching
 import (
 	"errors"
 	"time"
+
+	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 )
 
 var (
-	ErrResumeNotFound   = errors.New("matching resume not found")
-	ErrPositionNotFound = errors.New("matching position not found")
+	ErrResumeNotFound                = errors.New("matching resume not found")
+	ErrPositionNotFound              = errors.New("matching position not found")
+	ErrPositionOffline               = errors.New("matching position offline")
+	ErrPositionResumeCreateDenied    = errors.New("matching position resume create denied")
+	ErrInterviewQuestionGenerateFail = errors.New("matching interview question generation failed")
 )
 
 type DepartmentSummary struct {
@@ -57,6 +62,49 @@ type ParsedRelation struct {
 	PositionID string    `json:"positionId"`
 	MatchScore int       `json:"matchScore"`
 	CreatedAt  time.Time `json:"createdAt"`
+}
+
+type ParseInput struct {
+	ActorUserID               string
+	ResumeID                  string
+	PositionID                string
+	ResumeScope               iam.ScopePredicate
+	PositionScope             iam.ScopePredicate
+	PositionResumeCreateScope iam.ScopePredicate
+}
+
+type ParseResult struct {
+	ID        string          `json:"id"`
+	Resume    ResumeContext   `json:"resume"`
+	Position  PositionContext `json:"position"`
+	Score     Score           `json:"score"`
+	Evidence  Evidence        `json:"evidence"`
+	CreatedAt time.Time       `json:"createdAt"`
+}
+
+type InterviewQuestionInput struct {
+	ResumeID      string
+	PositionID    string
+	MatchScore    *int
+	ResumeScope   iam.ScopePredicate
+	PositionScope iam.ScopePredicate
+}
+
+type InterviewQuestionResult struct {
+	Groups []InterviewQuestionGroup `json:"groups" nullable:"false"`
+}
+
+type InterviewQuestionGroup struct {
+	Type      string              `json:"type"`
+	Label     string              `json:"label"`
+	Questions []InterviewQuestion `json:"questions" nullable:"false"`
+}
+
+type InterviewQuestion struct {
+	Order      int    `json:"order"`
+	Question   string `json:"question"`
+	Why        string `json:"why"`
+	Difficulty string `json:"difficulty"`
 }
 
 type MatchInput struct {
