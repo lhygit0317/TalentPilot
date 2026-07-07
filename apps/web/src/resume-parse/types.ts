@@ -1,4 +1,4 @@
-import type { DepartmentSummary, ResumeChannel, ResumeListItem } from "../resume-library/types";
+import type { DepartmentSummary, ResumeChannel } from "../resume-library/types";
 
 export type ParseSession = {
   dataScope: {
@@ -20,6 +20,19 @@ export type ParsePosition = {
   implicitTagCount?: number;
 };
 
+export type ParseResume = {
+  chan: ResumeChannel | string;
+  currentDepartment: DepartmentSummary;
+  expBase?: number;
+  id: string;
+  keywords: string[];
+  name: string;
+  pos: string;
+  source: string;
+  sourceBy: string;
+  traits?: string[];
+};
+
 export type MatchingImplicitTag = {
   name: string;
   w: number;
@@ -36,10 +49,7 @@ export type MatchWeightedEvidenceItem = MatchEvidenceItem & {
 
 export type ParseResult = {
   id: string;
-  resume: ResumeListItem & {
-    traits?: string[];
-    expBase?: number;
-  };
+  resume: ParseResume;
   position: ParsePosition & {
     keywords: string[];
     implicitTags: MatchingImplicitTag[];
