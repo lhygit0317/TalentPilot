@@ -115,6 +115,69 @@ export const zhCN = {
     },
     unknownSource: "未知来源",
   },
+  resumeParse: {
+    actions: {
+      generateQuestions: "生成面试题",
+      parse: "开始解析",
+      parsing: "Thinking...",
+    },
+    channelNavLabel: "解析渠道",
+    empty: {
+      positions: "请先在「部门与岗位管理」中维护岗位",
+      resumes: "该渠道下暂无可选简历,请导入",
+    },
+    emptyValue: "未解析到",
+    errors: {
+      codes: {
+        IAM_PERMISSION_DENIED: "没有权限执行该操作。",
+        JOB_ACCESS_DENIED: "无权查看导入任务。",
+        MATCHING_INTERVIEW_FAILED: "面试题生成失败，请稍后重试。",
+        MATCHING_PARSE_FAILED: "简历解析失败，请稍后重试。",
+        MATCHING_POSITION_OFFLINE: "岗位已下架，不能参与解析。",
+        RESUME_IMPORT_FAILED: "简历导入失败，请稍后重试。",
+        RESUME_IMPORT_PARSE_FAILED: "简历解析失败，请重新上传 PDF。",
+      },
+      fileTooLarge: "文件不能超过 10MB",
+      generic: "操作失败，请稍后重试。",
+      list: "简历列表加载失败，请稍后重试。",
+      positions: "岗位列表加载失败，请稍后重试。",
+      targetDepartmentRequired: "请选择导入目标部门",
+      unsupportedType: "仅支持 PDF 文件",
+    },
+    position: {
+      label: "目标岗位 JD",
+    },
+    questions: {
+      thinking: "Thinking...",
+      tabs: {
+        manager: "主管",
+        professional: "专业",
+        qualification: "资格",
+      },
+    },
+    result: {
+      empty: "解析结果将显示在这里 / 选择/导入简历并选岗位后点击「开始解析」",
+      experience: "经验匹配",
+      implicit: "隐性要求",
+      implicitTags: "隐性标签命中",
+      keywords: "关键词命中",
+      skill: "技能匹配",
+      thinking: "Thinking...",
+    },
+    selectedResume: (name: string) => `已选择: ${name}`,
+    source: {
+      library: "从简历库选择",
+      upload: "导入新简历",
+    },
+    subtitle: "选择候选人与在架 JD，生成可复核的匹配证据。",
+    title: "简历解析",
+    toasts: {
+      singleImported: (name: string) => `✓ 已导入「${name}」并加入简历库`,
+    },
+    upload: {
+      label: "点击上传简历",
+    },
+  },
   departmentPosition: {
     actions: {
       cancel: "取消",
