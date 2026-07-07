@@ -69,6 +69,22 @@ describe("api client", () => {
     expect(get).toHaveBeenCalledWith("/jobs/{jobId}", { params: { path: { jobId: "job_1" } } });
   });
 
+  it("parses resumes and generates interview questions", async () => {
+    const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    vi.doMock("@talentpilot/api-client", () => ({ createTalentPilotClient: vi.fn(() => ({ POST: post })) }));
+
+    const { generateInterviewQuestions, parseResumeMatch } = await import("./client");
+    await parseResumeMatch({ resumeId: "resume_1", positionId: "position_1" });
+    await generateInterviewQuestions({ resumeId: "resume_1", positionId: "position_1", matchScore: 76 });
+
+    expect(post).toHaveBeenCalledWith("/matching/parse", {
+      body: { resumeId: "resume_1", positionId: "position_1" },
+    });
+    expect(post).toHaveBeenCalledWith("/matching/interview-questions", {
+      body: { resumeId: "resume_1", positionId: "position_1", matchScore: 76 },
+    });
+  });
+
   it("lists creates updates and deletes departments", async () => {
     const del = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
     const get = vi.fn().mockResolvedValue({ data: { items: [] }, error: undefined });
