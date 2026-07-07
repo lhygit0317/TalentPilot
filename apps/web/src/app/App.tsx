@@ -7,6 +7,7 @@ import { zhCN } from "../i18n/zh-CN";
 import { getCurrentUser, loginWithW3, logout } from "../api/client";
 import { DepartmentPositionPage } from "../department-position/DepartmentPositionPage";
 import { ResumeLibraryPage } from "../resume-library/ResumeLibraryPage";
+import { ResumeParsePage } from "../resume-parse/ResumeParsePage";
 import "../styles/globals.css";
 
 type SessionView = {
@@ -208,7 +209,9 @@ export function App() {
             {successMessage}
           </p>
         ) : null}
-        {activePage === "resume-library" ? (
+        {activePage === "resume-parse" ? (
+          <ResumeParsePage session={session} />
+        ) : activePage === "resume-library" ? (
           <ResumeLibraryPage session={session} />
         ) : activePage === "departments-positions" ? (
           <DepartmentPositionPage session={session} />

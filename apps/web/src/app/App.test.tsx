@@ -4,15 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
 const apiMocks = vi.hoisted(() => ({
+  generateInterviewQuestions: vi.fn(),
   getDepartment: vi.fn(),
   getCurrentUser: vi.fn(),
+  getJob: vi.fn(),
   getPosition: vi.fn(),
   getResume: vi.fn(),
+  importResume: vi.fn(),
   listDepartments: vi.fn(),
   listPositions: vi.fn(),
   listResumes: vi.fn(),
   loginWithW3: vi.fn(),
   logout: vi.fn(),
+  parseResumeMatch: vi.fn(),
 }));
 
 vi.mock("../api/client", () => apiMocks);
@@ -109,6 +113,37 @@ describe("App", () => {
       },
       error: undefined,
     });
+    apiMocks.listResumes.mockReset();
+    apiMocks.listResumes.mockResolvedValue({
+      data: {
+        availableChannels: ["social"],
+        channelCounts: { social: 1, campus: 0 },
+        dataScopeSummary: "算力训练平台部",
+        items: [
+          {
+            id: "resume_1",
+            name: "张三",
+            age: 29,
+            school: "浙江大学",
+            yearsExp: 6,
+            currentDepartment: { id: "dept_a", name: "算力训练平台部" },
+            pos: "平台工程师",
+            source: "导入",
+            sourceBy: "李四",
+            chan: "social",
+            keywords: ["Go"],
+            canGet: true,
+            canDelete: false,
+          },
+        ],
+        nextCursor: "",
+      },
+      error: undefined,
+    });
+    apiMocks.parseResumeMatch.mockReset();
+    apiMocks.generateInterviewQuestions.mockReset();
+    apiMocks.importResume.mockReset();
+    apiMocks.getJob.mockReset();
     apiMocks.loginWithW3.mockReset();
     apiMocks.logout.mockReset();
   });
@@ -127,7 +162,7 @@ describe("App", () => {
     render(<App />);
 
     expect(apiMocks.getCurrentUser).toHaveBeenCalled();
-    expect(await screen.findByText("张三")).toBeInTheDocument();
+    expect(await screen.findByText("A12345")).toBeInTheDocument();
     expect(screen.queryByLabelText("公司账号")).not.toBeInTheDocument();
   });
 
@@ -151,7 +186,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "登录" }));
 
     expect(apiMocks.loginWithW3).toHaveBeenCalledWith("zhangsan", "secret");
-    expect(await screen.findByText("张三")).toBeInTheDocument();
+    expect(await screen.findByText("A12345")).toBeInTheDocument();
     expect(screen.getByText("A12345")).toBeInTheDocument();
     expect(screen.getByText("游客")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("已通过 W3 登录 · 游客");
@@ -175,7 +210,7 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "登录中" })).toBeDisabled();
 
     resolveLogin({ data: guestSession, error: undefined });
-    expect(await screen.findByText("张三")).toBeInTheDocument();
+    expect(await screen.findByText("A12345")).toBeInTheDocument();
   });
 
   it("shows a safe error message when login fails", async () => {
@@ -238,6 +273,19 @@ describe("App", () => {
 
     expect(await screen.findByRole("link", { name: "简历库" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "部门与岗位" })).toBeInTheDocument();
+  });
+
+  it("renders the resume parse workspace when it is the active IAM route", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({ data: hrbpSession, error: undefined });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "简历解析" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "从简历库选择" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "导入新简历" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /张三/ })).toBeInTheDocument();
+    expect(apiMocks.listResumes).toHaveBeenCalledWith({ chan: "social" });
+    expect(apiMocks.listPositions).toHaveBeenCalledWith({ chan: "social", status: "on" });
   });
 
   it("renders the resume library page when it is the active IAM route", async () => {
