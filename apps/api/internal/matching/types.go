@@ -1,8 +1,62 @@
 package matching
 
+import (
+	"errors"
+	"time"
+)
+
+var (
+	ErrResumeNotFound   = errors.New("matching resume not found")
+	ErrPositionNotFound = errors.New("matching position not found")
+)
+
+type DepartmentSummary struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type ImplicitTag struct {
 	Name   string `json:"name"`
 	Weight int    `json:"w"`
+}
+
+type ResumeContext struct {
+	ID                string            `json:"id"`
+	Name              string            `json:"name"`
+	Channel           string            `json:"chan"`
+	Pos               string            `json:"pos"`
+	Source            string            `json:"source"`
+	SourceBy          string            `json:"sourceBy"`
+	CurrentDepartment DepartmentSummary `json:"currentDepartment"`
+	Keywords          []string          `json:"keywords" nullable:"false"`
+	Traits            []string          `json:"traits" nullable:"false"`
+	ExpBase           int               `json:"expBase"`
+}
+
+type PositionContext struct {
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Department   DepartmentSummary `json:"department"`
+	Channel      string            `json:"chan"`
+	Level        string            `json:"level"`
+	Status       string            `json:"status"`
+	Keywords     []string          `json:"keywords" nullable:"false"`
+	ImplicitTags []ImplicitTag     `json:"implicitTags" nullable:"false"`
+}
+
+type ParsedRelationInput struct {
+	ResumeID    string
+	PositionID  string
+	MatchScore  int
+	ActorUserID string
+}
+
+type ParsedRelation struct {
+	ID         string    `json:"id"`
+	ResumeID   string    `json:"resumeId"`
+	PositionID string    `json:"positionId"`
+	MatchScore int       `json:"matchScore"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 type MatchInput struct {
