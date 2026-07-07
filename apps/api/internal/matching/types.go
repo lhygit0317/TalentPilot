@@ -15,38 +15,38 @@ var (
 	ErrInterviewQuestionGenerateFail = errors.New("matching interview question generation failed")
 )
 
-type DepartmentSummary struct {
+type MatchingDepartmentSummary struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-type ImplicitTag struct {
+type MatchingImplicitTag struct {
 	Name   string `json:"name"`
 	Weight int    `json:"w"`
 }
 
 type ResumeContext struct {
-	ID                string            `json:"id"`
-	Name              string            `json:"name"`
-	Channel           string            `json:"chan"`
-	Pos               string            `json:"pos"`
-	Source            string            `json:"source"`
-	SourceBy          string            `json:"sourceBy"`
-	CurrentDepartment DepartmentSummary `json:"currentDepartment"`
-	Keywords          []string          `json:"keywords" nullable:"false"`
-	Traits            []string          `json:"traits" nullable:"false"`
-	ExpBase           int               `json:"expBase"`
+	ID                string                    `json:"id"`
+	Name              string                    `json:"name"`
+	Channel           string                    `json:"chan"`
+	Pos               string                    `json:"pos"`
+	Source            string                    `json:"source"`
+	SourceBy          string                    `json:"sourceBy"`
+	CurrentDepartment MatchingDepartmentSummary `json:"currentDepartment"`
+	Keywords          []string                  `json:"keywords" nullable:"false"`
+	Traits            []string                  `json:"traits" nullable:"false"`
+	ExpBase           int                       `json:"expBase"`
 }
 
 type PositionContext struct {
-	ID           string            `json:"id"`
-	Name         string            `json:"name"`
-	Department   DepartmentSummary `json:"department"`
-	Channel      string            `json:"chan"`
-	Level        string            `json:"level"`
-	Status       string            `json:"status"`
-	Keywords     []string          `json:"keywords" nullable:"false"`
-	ImplicitTags []ImplicitTag     `json:"implicitTags" nullable:"false"`
+	ID           string                    `json:"id"`
+	Name         string                    `json:"name"`
+	Department   MatchingDepartmentSummary `json:"department"`
+	Channel      string                    `json:"chan"`
+	Level        string                    `json:"level"`
+	Status       string                    `json:"status"`
+	Keywords     []string                  `json:"keywords" nullable:"false"`
+	ImplicitTags []MatchingImplicitTag     `json:"implicitTags" nullable:"false"`
 }
 
 type ParsedRelationInput struct {
@@ -112,7 +112,7 @@ type MatchInput struct {
 	ResumeTraits         []string
 	ExperienceBase       int
 	PositionKeywords     []string
-	PositionImplicitTags []ImplicitTag
+	PositionImplicitTags []MatchingImplicitTag
 }
 
 type CalculationResult struct {

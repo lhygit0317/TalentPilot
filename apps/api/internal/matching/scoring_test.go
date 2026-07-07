@@ -15,7 +15,7 @@ func TestCalculateMatchScoreUsesPRDWeightsAndEvidence(t *testing.T) {
 			"Go",
 			"Kubernetes",
 		},
-		PositionImplicitTags: []matching.ImplicitTag{{Name: "稳定", Weight: 40}},
+		PositionImplicitTags: []matching.MatchingImplicitTag{{Name: "稳定", Weight: 40}},
 	})
 
 	if result.Score.Skill != 50 || result.Score.Experience != 82 || result.Score.Implicit != 100 {
@@ -41,7 +41,7 @@ func TestCalculateMatchScoreHandlesEmptyKeywordsAndImplicitTags(t *testing.T) {
 		ResumeTraits:         []string{"稳定"},
 		ExperienceBase:       70,
 		PositionKeywords:     []string{},
-		PositionImplicitTags: []matching.ImplicitTag{},
+		PositionImplicitTags: []matching.MatchingImplicitTag{},
 	})
 
 	if result.Score.Skill != 0 || result.Score.Implicit != 0 {
@@ -64,7 +64,7 @@ func TestCalculateMatchScoreIsCaseInsensitiveAndTrimsWhitespace(t *testing.T) {
 			"go",
 			"sre",
 		},
-		PositionImplicitTags: []matching.ImplicitTag{{Name: "抗压稳定", Weight: 60}},
+		PositionImplicitTags: []matching.MatchingImplicitTag{{Name: "抗压稳定", Weight: 60}},
 	})
 
 	if result.Score.Skill != 100 || result.Score.Implicit != 100 {
@@ -81,7 +81,7 @@ func TestCalculateMatchScoreRoundsAndClampsExperience(t *testing.T) {
 		ResumeTraits:         []string{"稳定"},
 		ExperienceBase:       -20,
 		PositionKeywords:     []string{"Go", "Rust", "Java"},
-		PositionImplicitTags: []matching.ImplicitTag{{Name: "稳定", Weight: 1}},
+		PositionImplicitTags: []matching.MatchingImplicitTag{{Name: "稳定", Weight: 1}},
 	})
 	if low.Score.Experience != 0 || low.Score.Total != 48 {
 		t.Fatalf("expected low experience clamp and rounded total, got %#v", low.Score)
@@ -92,7 +92,7 @@ func TestCalculateMatchScoreRoundsAndClampsExperience(t *testing.T) {
 		ResumeTraits:         []string{"稳定"},
 		ExperienceBase:       140,
 		PositionKeywords:     []string{"Go"},
-		PositionImplicitTags: []matching.ImplicitTag{{Name: "稳定", Weight: 1}},
+		PositionImplicitTags: []matching.MatchingImplicitTag{{Name: "稳定", Weight: 1}},
 	})
 	if high.Score.Experience != 100 || high.Score.Total != 100 {
 		t.Fatalf("expected high experience clamp, got %#v", high.Score)

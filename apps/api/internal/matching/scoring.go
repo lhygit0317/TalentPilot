@@ -51,7 +51,7 @@ func keywordEvidence(positionKeywords []string, resumeKeywords []string) ([]Evid
 	return evidence, matches
 }
 
-func implicitEvidence(positionTags []ImplicitTag, resumeTraits []string) ([]WeightedEvidenceItem, int, int) {
+func implicitEvidence(positionTags []MatchingImplicitTag, resumeTraits []string) ([]WeightedEvidenceItem, int, int) {
 	traitSet := normalizedSet(resumeTraits)
 	evidence := make([]WeightedEvidenceItem, 0, len(positionTags))
 	matches := 0

@@ -39,7 +39,7 @@ func TestServiceParseRequiresPositionResumeCreateScope(t *testing.T) {
 		position: matching.PositionContext{
 			ID:         "position_1",
 			Status:     "on",
-			Department: matching.DepartmentSummary{ID: "dept_b", Name: "智算调度部"},
+			Department: matching.MatchingDepartmentSummary{ID: "dept_b", Name: "智算调度部"},
 			Keywords:   []string{"Go"},
 		},
 	}
@@ -73,7 +73,7 @@ func TestServiceParseUpsertsRelationAndRecordsAudit(t *testing.T) {
 			Pos:               "平台工程师",
 			Source:            "导入",
 			SourceBy:          "李四",
-			CurrentDepartment: matching.DepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
+			CurrentDepartment: matching.MatchingDepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
 			Keywords:          []string{"Go", "调度"},
 			Traits:            []string{"稳定"},
 			ExpBase:           82,
@@ -81,12 +81,12 @@ func TestServiceParseUpsertsRelationAndRecordsAudit(t *testing.T) {
 		position: matching.PositionContext{
 			ID:           "position_1",
 			Name:         "平台工程师",
-			Department:   matching.DepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
+			Department:   matching.MatchingDepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
 			Channel:      "social",
 			Level:        "P6",
 			Status:       "on",
 			Keywords:     []string{"Go", "Kubernetes"},
-			ImplicitTags: []matching.ImplicitTag{{Name: "稳定", Weight: 40}},
+			ImplicitTags: []matching.MatchingImplicitTag{{Name: "稳定", Weight: 40}},
 		},
 		relation: matching.ParsedRelation{
 			ID:         "position_resume_1",
@@ -135,15 +135,15 @@ func TestServiceGenerateInterviewQuestionsBuildsThreeGroupsWithDepartmentAndHigh
 			Traits:            []string{"稳定"},
 			ExpBase:           82,
 			Channel:           "social",
-			CurrentDepartment: matching.DepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
+			CurrentDepartment: matching.MatchingDepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
 		},
 		position: matching.PositionContext{
 			ID:           "position_1",
 			Name:         "平台工程师",
-			Department:   matching.DepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
+			Department:   matching.MatchingDepartmentSummary{ID: "dept_a", Name: "算力训练平台部"},
 			Status:       "on",
 			Keywords:     []string{"Go"},
-			ImplicitTags: []matching.ImplicitTag{{Name: "稳定", Weight: 40}},
+			ImplicitTags: []matching.MatchingImplicitTag{{Name: "稳定", Weight: 40}},
 		},
 	}
 	service := matching.NewService(store, audit.NopRecorder{}, matching.NewRuleQuestionGenerator())

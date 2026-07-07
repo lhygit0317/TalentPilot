@@ -303,6 +303,48 @@
         ],
         "type": "object"
       },
+      "Evidence": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis": {
+            "type": "string"
+          },
+          "implicitTags": {
+            "items": {
+              "$ref": "#/components/schemas/WeightedEvidenceItem"
+            },
+            "type": "array"
+          },
+          "keywords": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "keywords",
+          "implicitTags",
+          "analysis"
+        ],
+        "type": "object"
+      },
+      "EvidenceItem": {
+        "additionalProperties": false,
+        "properties": {
+          "matched": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "matched"
+        ],
+        "type": "object"
+      },
       "FormFile": {
         "additionalProperties": false,
         "properties": {
@@ -375,6 +417,69 @@
         },
         "required": [
           "name"
+        ],
+        "type": "object"
+      },
+      "InterviewQuestion": {
+        "additionalProperties": false,
+        "properties": {
+          "difficulty": {
+            "type": "string"
+          },
+          "order": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "question": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "order",
+          "question",
+          "why",
+          "difficulty"
+        ],
+        "type": "object"
+      },
+      "InterviewQuestionGroup": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/InterviewQuestion"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "label",
+          "questions"
+        ],
+        "type": "object"
+      },
+      "InterviewQuestionResult": {
+        "additionalProperties": false,
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/InterviewQuestionGroup"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "groups"
         ],
         "type": "object"
       },
@@ -579,6 +684,110 @@
         ],
         "type": "object"
       },
+      "MatchingDepartmentSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "MatchingImplicitTag": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "w": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "w"
+        ],
+        "type": "object"
+      },
+      "MatchingInterviewBody": {
+        "additionalProperties": false,
+        "properties": {
+          "matchScore": {
+            "format": "int64",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "positionId": {
+            "type": "string"
+          },
+          "resumeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resumeId",
+          "positionId"
+        ],
+        "type": "object"
+      },
+      "MatchingParseBody": {
+        "additionalProperties": false,
+        "properties": {
+          "positionId": {
+            "type": "string"
+          },
+          "resumeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resumeId",
+          "positionId"
+        ],
+        "type": "object"
+      },
+      "ParseResult": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          },
+          "id": {
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/PositionContext"
+          },
+          "resume": {
+            "$ref": "#/components/schemas/ResumeContext"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          }
+        },
+        "required": [
+          "id",
+          "resume",
+          "position",
+          "score",
+          "evidence",
+          "createdAt"
+        ],
+        "type": "object"
+      },
       "PositionBody": {
         "additionalProperties": false,
         "properties": {
@@ -638,6 +847,52 @@
           "status",
           "duties",
           "must",
+          "keywords",
+          "implicitTags"
+        ],
+        "type": "object"
+      },
+      "PositionContext": {
+        "additionalProperties": false,
+        "properties": {
+          "chan": {
+            "type": "string"
+          },
+          "department": {
+            "$ref": "#/components/schemas/MatchingDepartmentSummary"
+          },
+          "id": {
+            "type": "string"
+          },
+          "implicitTags": {
+            "items": {
+              "$ref": "#/components/schemas/MatchingImplicitTag"
+            },
+            "type": "array"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "level": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "department",
+          "chan",
+          "level",
+          "status",
           "keywords",
           "implicitTags"
         ],
@@ -928,6 +1183,61 @@
         ],
         "type": "object"
       },
+      "ResumeContext": {
+        "additionalProperties": false,
+        "properties": {
+          "chan": {
+            "type": "string"
+          },
+          "currentDepartment": {
+            "$ref": "#/components/schemas/MatchingDepartmentSummary"
+          },
+          "expBase": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceBy": {
+            "type": "string"
+          },
+          "traits": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "chan",
+          "pos",
+          "source",
+          "sourceBy",
+          "currentDepartment",
+          "keywords",
+          "traits",
+          "expBase"
+        ],
+        "type": "object"
+      },
       "RoleBinding": {
         "additionalProperties": false,
         "properties": {
@@ -948,6 +1258,38 @@
         ],
         "type": "object"
       },
+      "Score": {
+        "additionalProperties": false,
+        "properties": {
+          "experience": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "implicit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "judgement": {
+            "type": "string"
+          },
+          "skill": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "skill",
+          "experience",
+          "implicit",
+          "judgement"
+        ],
+        "type": "object"
+      },
       "UserSummary": {
         "additionalProperties": false,
         "properties": {
@@ -965,6 +1307,27 @@
           "id",
           "employeeId",
           "name"
+        ],
+        "type": "object"
+      },
+      "WeightedEvidenceItem": {
+        "additionalProperties": false,
+        "properties": {
+          "matched": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "w": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "w",
+          "matched"
         ],
         "type": "object"
       }
@@ -1715,6 +2078,168 @@
         "summary": "Get job status",
         "tags": [
           "jobs"
+        ]
+      }
+    },
+    "/matching/interview-questions": {
+      "post": {
+        "operationId": "post-matching-interview-questions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchingInterviewBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewQuestionResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Generate interview questions",
+        "tags": [
+          "matching"
+        ]
+      }
+    },
+    "/matching/parse": {
+      "post": {
+        "operationId": "post-matching-parse",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchingParseBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Parse resume against a position",
+        "tags": [
+          "matching"
         ]
       }
     },

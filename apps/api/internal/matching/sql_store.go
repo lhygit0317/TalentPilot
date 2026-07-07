@@ -194,7 +194,7 @@ func (r resumeContextRow) context() (ResumeContext, error) {
 		Pos:               r.Pos,
 		Source:            r.Source,
 		SourceBy:          r.SourceBy,
-		CurrentDepartment: DepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
+		CurrentDepartment: MatchingDepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
 		Keywords:          keywords,
 		Traits:            traits,
 		ExpBase:           r.ExpBase,
@@ -218,14 +218,14 @@ func (r positionContextRow) context() (PositionContext, error) {
 	if err != nil {
 		return PositionContext{}, err
 	}
-	implicitTags, err := decodeImplicitTags(r.ImplicitTags)
+	implicitTags, err := decodeMatchingImplicitTags(r.ImplicitTags)
 	if err != nil {
 		return PositionContext{}, err
 	}
 	return PositionContext{
 		ID:           r.ID,
 		Name:         r.Name,
-		Department:   DepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
+		Department:   MatchingDepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
 		Channel:      r.Channel,
 		Level:        r.Level,
 		Status:       r.Status,
@@ -248,16 +248,16 @@ func decodeStringSlice(raw string) ([]string, error) {
 	return values, nil
 }
 
-func decodeImplicitTags(raw string) ([]ImplicitTag, error) {
+func decodeMatchingImplicitTags(raw string) ([]MatchingImplicitTag, error) {
 	if raw == "" {
-		return []ImplicitTag{}, nil
+		return []MatchingImplicitTag{}, nil
 	}
-	var values []ImplicitTag
+	var values []MatchingImplicitTag
 	if err := json.Unmarshal([]byte(raw), &values); err != nil {
 		return nil, err
 	}
 	if values == nil {
-		return []ImplicitTag{}, nil
+		return []MatchingImplicitTag{}, nil
 	}
 	return values, nil
 }
