@@ -1,6 +1,53 @@
 {
   "components": {
     "schemas": {
+      "AssignableRole": {
+        "additionalProperties": false,
+        "properties": {
+          "attributeConditionSummary": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isSystem": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "supportsSystemDepartment": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "description",
+          "isSystem",
+          "supportsSystemDepartment",
+          "attributeConditionSummary"
+        ],
+        "type": "object"
+      },
+      "AssignableRoleListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AssignableRole"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "type": "object"
+      },
       "AuthResponse": {
         "additionalProperties": false,
         "properties": {
@@ -49,6 +96,44 @@
         ],
         "type": "object"
       },
+      "CreateRoleBindingsResult": {
+        "additionalProperties": false,
+        "properties": {
+          "created": {
+            "items": {
+              "$ref": "#/components/schemas/UserAdminRoleBindingDetail"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserAdminIdentity"
+          }
+        },
+        "required": [
+          "user",
+          "created",
+          "message"
+        ],
+        "type": "object"
+      },
+      "CreateUserRoleBindingsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "bindings": {
+            "items": {
+              "$ref": "#/components/schemas/RoleBindingRequest"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "bindings"
+        ],
+        "type": "object"
+      },
       "DataScope": {
         "additionalProperties": false,
         "properties": {
@@ -72,6 +157,26 @@
           "departments",
           "allDepartments",
           "channels"
+        ],
+        "type": "object"
+      },
+      "DeleteRoleBindingResult": {
+        "additionalProperties": false,
+        "properties": {
+          "deletedBindingId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deletedBindingId",
+          "userId",
+          "message"
         ],
         "type": "object"
       },
@@ -1394,6 +1499,22 @@
         ],
         "type": "object"
       },
+      "RoleBindingRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "departmentId": {
+            "type": "string"
+          },
+          "roleId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "departmentId",
+          "roleId"
+        ],
+        "type": "object"
+      },
       "RouteResult": {
         "additionalProperties": false,
         "properties": {
@@ -1520,6 +1641,180 @@
           "notifiedCount",
           "selfNotificationRead",
           "message"
+        ],
+        "type": "object"
+      },
+      "UserAdminDepartmentSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "system": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "system"
+        ],
+        "type": "object"
+      },
+      "UserAdminIdentity": {
+        "additionalProperties": false,
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "employeeId",
+          "name"
+        ],
+        "type": "object"
+      },
+      "UserAdminRoleBindingDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "canDelete": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "department": {
+            "$ref": "#/components/schemas/UserAdminDepartmentSummary"
+          },
+          "guest": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserAdminRoleSummary"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "department",
+          "guest",
+          "createdAt",
+          "createdBy",
+          "canDelete"
+        ],
+        "type": "object"
+      },
+      "UserAdminRoleSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isSystem": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "isSystem",
+          "enabled"
+        ],
+        "type": "object"
+      },
+      "UserAdminUserSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "canAssign": {
+            "type": "boolean"
+          },
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/UserAdminDepartmentSummary"
+            },
+            "type": "array"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "guestOnly": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roleBindings": {
+            "items": {
+              "$ref": "#/components/schemas/UserAdminRoleBindingDetail"
+            },
+            "type": "array"
+          },
+          "roleSummary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "employeeId",
+          "name",
+          "departments",
+          "roleBindings",
+          "roleSummary",
+          "guestOnly",
+          "canAssign"
+        ],
+        "type": "object"
+      },
+      "UserListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "canAssignRoles": {
+            "type": "boolean"
+          },
+          "dataScopeSummary": {
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UserAdminUserSummary"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "dataScopeSummary",
+          "canAssignRoles"
         ],
         "type": "object"
       },
@@ -3573,6 +3868,398 @@
         "summary": "Get resume detail",
         "tags": [
           "resumes"
+        ]
+      }
+    },
+    "/roles/assignable": {
+      "get": {
+        "operationId": "get-assignable-roles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignableRoleListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List roles assignable to users",
+        "tags": [
+          "user-admin"
+        ]
+      }
+    },
+    "/users": {
+      "get": {
+        "operationId": "get-users",
+        "parameters": [
+          {
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List users and role bindings",
+        "tags": [
+          "user-admin"
+        ]
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "operationId": "get-user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAdminUserSummary"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get user role bindings",
+        "tags": [
+          "user-admin"
+        ]
+      }
+    },
+    "/users/{userId}/role-bindings": {
+      "post": {
+        "operationId": "post-user-role-bindings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRoleBindingsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRoleBindingsResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Assign user role bindings",
+        "tags": [
+          "user-admin"
+        ]
+      }
+    },
+    "/users/{userId}/role-bindings/{bindingId}": {
+      "delete": {
+        "operationId": "delete-user-role-binding",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "bindingId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteRoleBindingResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Delete a user role binding",
+        "tags": [
+          "user-admin"
         ]
       }
     }

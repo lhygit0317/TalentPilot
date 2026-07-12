@@ -108,6 +108,31 @@ export function sendRecommendation(body: { resumeId: string; departmentId: strin
   return apiClient.POST("/recommendations/send", { body });
 }
 
+export function listUsers(query: { search?: string; limit?: number; cursor?: string } = {}) {
+  return apiClient.GET("/users", { params: { query } });
+}
+
+export function getUser(userId: string) {
+  return apiClient.GET("/users/{userId}", { params: { path: { userId } } });
+}
+
+export function listAssignableRoles() {
+  return apiClient.GET("/roles/assignable");
+}
+
+export function assignUserRoleBindings(
+  userId: string,
+  body: { bindings: Array<{ departmentId: string; roleId: string }> },
+) {
+  return apiClient.POST("/users/{userId}/role-bindings", { params: { path: { userId } }, body });
+}
+
+export function deleteUserRoleBinding(userId: string, bindingId: string) {
+  return apiClient.DELETE("/users/{userId}/role-bindings/{bindingId}", {
+    params: { path: { userId, bindingId } },
+  });
+}
+
 export async function loginWithW3(account: string, password: string) {
   await apiClient.GET("/auth/csrf");
 

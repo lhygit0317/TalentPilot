@@ -317,10 +317,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/roles/assignable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List roles assignable to users */
+        get: operations["get-assignable-roles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List users and role bindings */
+        get: operations["get-users"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get user role bindings */
+        get: operations["get-user"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/role-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign user role bindings */
+        post: operations["post-user-role-bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/role-bindings/{bindingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a user role binding */
+        delete: operations["delete-user-role-binding"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AssignableRole: {
+            attributeConditionSummary: string;
+            description: string;
+            id: string;
+            isSystem: boolean;
+            label: string;
+            supportsSystemDepartment: boolean;
+        };
+        AssignableRoleListResult: {
+            items: components["schemas"]["AssignableRole"][];
+        };
         AuthResponse: {
             dataScope: components["schemas"]["DataScope"];
             defaultRoute: string;
@@ -330,10 +426,23 @@ export interface components {
             roleLabels: string[];
             user: components["schemas"]["UserSummary"];
         };
+        CreateRoleBindingsResult: {
+            created: components["schemas"]["UserAdminRoleBindingDetail"][];
+            message: string;
+            user: components["schemas"]["UserAdminIdentity"];
+        };
+        CreateUserRoleBindingsBody: {
+            bindings: components["schemas"]["RoleBindingRequest"][];
+        };
         DataScope: {
             allDepartments: boolean;
             channels: string[];
             departments: components["schemas"]["DepartmentScope"][];
+        };
+        DeleteRoleBindingResult: {
+            deletedBindingId: string;
+            message: string;
+            userId: string;
         };
         DepartmentBody: {
             name: string;
@@ -671,6 +780,10 @@ export interface components {
             departmentName: string;
             roleLabel: string;
         };
+        RoleBindingRequest: {
+            departmentId: string;
+            roleId: string;
+        };
         RouteResult: {
             /** Format: date-time */
             createdAt: string;
@@ -706,6 +819,48 @@ export interface components {
             reusedExistingCopy: boolean;
             selfNotificationRead: boolean;
             sourceResumeId: string;
+        };
+        UserAdminDepartmentSummary: {
+            id: string;
+            name: string;
+            system: boolean;
+        };
+        UserAdminIdentity: {
+            employeeId: string;
+            id: string;
+            name: string;
+        };
+        UserAdminRoleBindingDetail: {
+            canDelete: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: string;
+            department: components["schemas"]["UserAdminDepartmentSummary"];
+            guest: boolean;
+            id: string;
+            role: components["schemas"]["UserAdminRoleSummary"];
+        };
+        UserAdminRoleSummary: {
+            enabled: boolean;
+            id: string;
+            isSystem: boolean;
+            label: string;
+        };
+        UserAdminUserSummary: {
+            canAssign: boolean;
+            departments: components["schemas"]["UserAdminDepartmentSummary"][];
+            employeeId: string;
+            guestOnly: boolean;
+            id: string;
+            name: string;
+            roleBindings: components["schemas"]["UserAdminRoleBindingDetail"][];
+            roleSummary: string;
+        };
+        UserListResult: {
+            canAssignRoles: boolean;
+            dataScopeSummary: string;
+            items: components["schemas"]["UserAdminUserSummary"][];
+            nextCursor: string;
         };
         UserSummary: {
             employeeId: string;
@@ -2211,6 +2366,310 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "get-assignable-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignableRoleListResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "get-users": {
+        parameters: {
+            query?: {
+                search?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "get-user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserAdminUserSummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "post-user-role-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserRoleBindingsBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateRoleBindingsResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "delete-user-role-binding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                bindingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteRoleBindingResult"];
+                };
             };
             /** @description Unauthorized */
             401: {

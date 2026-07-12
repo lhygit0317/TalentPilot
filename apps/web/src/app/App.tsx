@@ -9,6 +9,7 @@ import { DepartmentPositionPage } from "../department-position/DepartmentPositio
 import { ResumeLibraryPage } from "../resume-library/ResumeLibraryPage";
 import { ResumeParsePage } from "../resume-parse/ResumeParsePage";
 import { ResumeRecommendPage } from "../resume-recommend/ResumeRecommendPage";
+import { UsersPage } from "../users/UsersPage";
 import "../styles/globals.css";
 
 type SessionView = {
@@ -218,6 +219,8 @@ export function App() {
           <ResumeLibraryPage session={session} />
         ) : activePage === "departments-positions" ? (
           <DepartmentPositionPage session={session} />
+        ) : activePage === "users" ? (
+          <UsersPage session={session} />
         ) : (
           <h1 className="text-2xl font-semibold tracking-normal">{routeLabels[activePage] ?? text.nav.resumeParse}</h1>
         )}

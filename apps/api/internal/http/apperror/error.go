@@ -52,6 +52,14 @@ const (
 	PositionDuplicateImplicitTag         Code = "POSITION_DUPLICATE_IMPLICIT_TAG"
 	PositionInvalidImplicitWeight        Code = "POSITION_INVALID_IMPLICIT_WEIGHT"
 	PositionDeleteHasHistory             Code = "POSITION_DELETE_HAS_HISTORY"
+	UserNotFound                         Code = "USER_NOT_FOUND"
+	UserRoleBindingNotFound              Code = "USER_ROLE_BINDING_NOT_FOUND"
+	UserRoleBindingDuplicate             Code = "USER_ROLE_BINDING_DUPLICATE"
+	UserRoleBindingBatchEmpty            Code = "USER_ROLE_BINDING_BATCH_EMPTY"
+	UserRoleBindingBatchTooLarge         Code = "USER_ROLE_BINDING_BATCH_TOO_LARGE"
+	UserRoleBindingGuestProtected        Code = "USER_ROLE_BINDING_GUEST_PROTECTED"
+	UserRoleBindingSelfLockout           Code = "USER_ROLE_BINDING_SELF_LOCKOUT"
+	UserRoleBindingRoleDisabled          Code = "USER_ROLE_BINDING_ROLE_DISABLED"
 	RecommendationRouteFailed            Code = "RECOMMENDATION_ROUTE_FAILED"
 	RecommendationTargetPositionOffline  Code = "RECOMMENDATION_TARGET_POSITION_OFFLINE"
 	RecommendationTargetPositionMismatch Code = "RECOMMENDATION_TARGET_POSITION_MISMATCH"
@@ -160,9 +168,9 @@ func statusForCode(code Code) int {
 		return http.StatusGatewayTimeout
 	case PermissionDenied, ResumeDeleteDenied, JobAccessDenied:
 		return http.StatusForbidden
-	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound:
+	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound, UserNotFound, UserRoleBindingNotFound:
 		return http.StatusNotFound
-	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, RecommendationTargetPositionOffline, RecommendationTargetPositionMismatch, RecommendationChannelMismatch, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
+	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, UserRoleBindingDuplicate, UserRoleBindingBatchEmpty, UserRoleBindingBatchTooLarge, UserRoleBindingGuestProtected, UserRoleBindingSelfLockout, UserRoleBindingRoleDisabled, RecommendationTargetPositionOffline, RecommendationTargetPositionMismatch, RecommendationChannelMismatch, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -206,7 +214,7 @@ func defaultMessage(code Code) string {
 	case IAMPrincipalNotFound:
 		return "权限主体不存在"
 	case IAMScopeUnsupported:
-		return "该角色不支持系统级数据范围"
+		return "该角色不能绑定到系统部门"
 	case ResumeNotFound:
 		return "简历不存在"
 	case ResumeImportFileTooLarge:
@@ -257,6 +265,22 @@ func defaultMessage(code Code) string {
 		return "隐性标签权重不合法"
 	case PositionDeleteHasHistory:
 		return "岗位已有解析或推荐历史，请使用下架"
+	case UserNotFound:
+		return "用户不存在"
+	case UserRoleBindingNotFound:
+		return "角色绑定不存在"
+	case UserRoleBindingDuplicate:
+		return "该用户已存在相同角色绑定"
+	case UserRoleBindingBatchEmpty:
+		return "请至少添加一条角色绑定"
+	case UserRoleBindingBatchTooLarge:
+		return "一次最多添加 20 条角色绑定"
+	case UserRoleBindingGuestProtected:
+		return "游客身份不可解除"
+	case UserRoleBindingSelfLockout:
+		return "不能解除自己的最后一个业务角色"
+	case UserRoleBindingRoleDisabled:
+		return "该角色已禁用，不能分配"
 	case RecommendationRouteFailed:
 		return "智能分流失败，请稍后重试"
 	case RecommendationTargetPositionOffline:

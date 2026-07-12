@@ -14,6 +14,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/platform/db"
 	"github.com/talentpilot/talentpilot/apps/api/internal/recommendation"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
+	"github.com/talentpilot/talentpilot/apps/api/internal/useradmin"
 )
 
 func main() {
@@ -40,6 +41,8 @@ func main() {
 	matchingService := matching.NewService(matchingStore, auditRecorder, matching.NewRuleQuestionGenerator())
 	recommendationStore := recommendation.NewSQLStore(database)
 	recommendationService := recommendation.NewService(recommendationStore, auditRecorder)
+	userAdminStore := useradmin.NewSQLStore(database)
+	userAdminService := useradmin.NewService(userAdminStore, iamService, auditRecorder)
 	server := app.NewServerWithOptions(app.Options{
 		AuthService:           authService,
 		IAMService:            iamService,
@@ -47,6 +50,7 @@ func main() {
 		OrganizationService:   organizationService,
 		MatchingService:       matchingService,
 		RecommendationService: recommendationService,
+		UserAdminService:      userAdminService,
 		FrontendOrigin:        cfg.FrontendOrigin,
 		RequireHTTPS:          cfg.Env == "production",
 		SecureCookies:         cfg.SecureCookies,

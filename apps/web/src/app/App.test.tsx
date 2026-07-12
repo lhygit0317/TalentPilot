@@ -11,9 +11,14 @@ const apiMocks = vi.hoisted(() => ({
   getPosition: vi.fn(),
   getResume: vi.fn(),
   importResume: vi.fn(),
+  assignUserRoleBindings: vi.fn(),
+  deleteUserRoleBinding: vi.fn(),
+  getUser: vi.fn(),
+  listAssignableRoles: vi.fn(),
   listDepartments: vi.fn(),
   listPositions: vi.fn(),
   listResumes: vi.fn(),
+  listUsers: vi.fn(),
   loginWithW3: vi.fn(),
   logout: vi.fn(),
   parseResumeMatch: vi.fn(),
@@ -60,6 +65,13 @@ const hrbpSession = {
     },
   ],
   roleLabels: ["HRBP"],
+};
+
+const userAdminSession = {
+  ...hrbpSession,
+  defaultRoute: "/users",
+  pageAccess: ["users"],
+  permissions: ["User.List", "User.Get", "UserDepartmentRole.List", "UserDepartmentRole.Create", "UserDepartmentRole.Delete"],
 };
 
 async function renderLoginApp() {
@@ -146,6 +158,32 @@ describe("App", () => {
     apiMocks.routeRecommendation.mockReset();
     apiMocks.sendRecommendation.mockReset();
     apiMocks.generateInterviewQuestions.mockReset();
+    apiMocks.assignUserRoleBindings.mockReset();
+    apiMocks.deleteUserRoleBinding.mockReset();
+    apiMocks.getUser.mockReset();
+    apiMocks.listAssignableRoles.mockReset();
+    apiMocks.listAssignableRoles.mockResolvedValue({ data: { items: [] }, error: undefined });
+    apiMocks.listUsers.mockReset();
+    apiMocks.listUsers.mockResolvedValue({
+      data: {
+        canAssignRoles: true,
+        dataScopeSummary: "负责部门:算力训练平台部",
+        items: [
+          {
+            id: "user_a",
+            employeeId: "A10001",
+            name: "张敏",
+            departments: [{ id: "dept_a", name: "算力训练平台部", system: false }],
+            roleBindings: [],
+            roleSummary: "HRBP(部门:算力训练平台部)",
+            guestOnly: false,
+            canAssign: true,
+          },
+        ],
+        nextCursor: "",
+      },
+      error: undefined,
+    });
     apiMocks.importResume.mockReset();
     apiMocks.getJob.mockReset();
     apiMocks.loginWithW3.mockReset();
@@ -356,6 +394,16 @@ describe("App", () => {
     expect(screen.getByRole("columnheader", { name: "部门名称" })).toBeInTheDocument();
     expect(apiMocks.listDepartments).toHaveBeenCalled();
     expect(apiMocks.listPositions).toHaveBeenCalled();
+  });
+
+  it("renders the users page when it is the active IAM route", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({ data: userAdminSession, error: undefined });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "用户管理" })).toBeInTheDocument();
+    expect(apiMocks.listUsers).toHaveBeenCalledWith({});
+    expect(screen.getByRole("row", { name: /张敏/ })).toBeInTheDocument();
   });
 
   it("returns to the login form after logout", async () => {

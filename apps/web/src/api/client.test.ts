@@ -159,4 +159,33 @@ describe("api client", () => {
       body: { resumeId: "resume_1", departmentId: "dept_a", positionId: "position_a" },
     });
   });
+
+  it("manages users and role bindings", async () => {
+    const del = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const get = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    vi.doMock("@talentpilot/api-client", () => ({
+      createTalentPilotClient: vi.fn(() => ({ DELETE: del, GET: get, POST: post })),
+    }));
+
+    const { assignUserRoleBindings, deleteUserRoleBinding, getUser, listAssignableRoles, listUsers } = await import(
+      "./client"
+    );
+    await listUsers({ search: "张", limit: 25 });
+    await getUser("user_a");
+    await listAssignableRoles();
+    await assignUserRoleBindings("user_a", { bindings: [{ departmentId: "dept_a", roleId: "__role_manager__" }] });
+    await deleteUserRoleBinding("user_a", "udr_1");
+
+    expect(get).toHaveBeenCalledWith("/users", { params: { query: { search: "张", limit: 25 } } });
+    expect(get).toHaveBeenCalledWith("/users/{userId}", { params: { path: { userId: "user_a" } } });
+    expect(get).toHaveBeenCalledWith("/roles/assignable");
+    expect(post).toHaveBeenCalledWith("/users/{userId}/role-bindings", {
+      params: { path: { userId: "user_a" } },
+      body: { bindings: [{ departmentId: "dept_a", roleId: "__role_manager__" }] },
+    });
+    expect(del).toHaveBeenCalledWith("/users/{userId}/role-bindings/{bindingId}", {
+      params: { path: { userId: "user_a", bindingId: "udr_1" } },
+    });
+  });
 });
