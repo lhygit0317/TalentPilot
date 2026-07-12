@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/pressly/goose/v3"
+	"github.com/talentpilot/talentpilot/apps/api/internal/audit"
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 	"github.com/talentpilot/talentpilot/apps/api/internal/roleadmin"
+	"github.com/talentpilot/talentpilot/apps/api/internal/useradmin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -121,6 +123,97 @@ func TestSQLStorePermissionOptionsComeFromIAMWhitelist(t *testing.T) {
 	}
 }
 
+func TestSQLStoreCreateRoleDefinitionPersistsDirectRows(t *testing.T) {
+	db := newRoleAdminMigratedSQLiteGormDB(t)
+	seedRoleAdminFixture(t, db)
+	invalidator := &fakeRoleInvalidator{}
+	service := roleadmin.NewService(roleadmin.NewSQLStore(db), invalidator, audit.NopRecorder{})
+
+	detail, err := service.CreateRole(context.Background(), roleadmin.RoleDefinitionInput{
+		ActorUserID: "user_a",
+		Label:       "评审专家",
+		Description: "查看社招简历",
+		Enabled:     true,
+		Permissions: []roleadmin.PermissionInput{
+			{Resource: iam.ResourceResume, Action: iam.ActionList, AttributeConditions: iam.AttributeConditions{Channels: []string{"social"}}},
+			{Resource: iam.ResourceUser, Action: iam.ActionList},
+		},
+		ChildRoleIDs: []string{iam.RoleTrainee},
+	})
+	if err != nil {
+		t.Fatalf("create role: %v", err)
+	}
+
+	if detail.ID == "" || detail.Label != "评审专家" || len(detail.Permissions) != 2 || !slices.Contains(detail.ChildRoleIDs, iam.RoleTrainee) {
+		t.Fatalf("unexpected created detail: %#v", detail)
+	}
+	assertRoleAdminCount(t, db, "roles", "label = '评审专家' AND is_system = false AND enabled = true", 1)
+	assertRoleAdminCount(t, db, "permissions", "role_id = '"+detail.ID+"'", 2)
+	assertRoleAdminCount(t, db, "role_relations", "parent_role_id = '"+detail.ID+"' AND child_role_id = '__role_trainee__'", 1)
+	if !slices.Equal(invalidator.roleIDs, []string{detail.ID}) {
+		t.Fatalf("expected role closure invalidation for created role, got %#v", invalidator.roleIDs)
+	}
+}
+
+func TestSQLStoreUpdateRoleDefinitionReplacesDirectRows(t *testing.T) {
+	db := newRoleAdminMigratedSQLiteGormDB(t)
+	seedRoleAdminFixture(t, db)
+	service := roleadmin.NewService(roleadmin.NewSQLStore(db), &fakeRoleInvalidator{}, audit.NopRecorder{})
+
+	detail, err := service.UpdateRole(context.Background(), "role_custom_reviewer", roleadmin.RoleDefinitionInput{
+		ActorUserID: "user_a",
+		Label:       "高级评审者",
+		Description: "仅查看用户列表",
+		Enabled:     true,
+		Permissions: []roleadmin.PermissionInput{
+			{Resource: iam.ResourceUser, Action: iam.ActionList},
+		},
+		ChildRoleIDs: []string{},
+	})
+	if err != nil {
+		t.Fatalf("update role: %v", err)
+	}
+
+	if detail.Description != "仅查看用户列表" || len(detail.Permissions) != 1 || len(detail.ChildRoleIDs) != 0 {
+		t.Fatalf("unexpected updated detail: %#v", detail)
+	}
+	assertRoleAdminCount(t, db, "permissions", "role_id = 'role_custom_reviewer'", 1)
+	assertRoleAdminCount(t, db, "role_relations", "parent_role_id = 'role_custom_reviewer'", 0)
+}
+
+func TestSQLStoreToggleEnabledAffectsAssignableRoles(t *testing.T) {
+	db := newRoleAdminMigratedSQLiteGormDB(t)
+	seedRoleAdminFixture(t, db)
+	service := roleadmin.NewService(roleadmin.NewSQLStore(db), &fakeRoleInvalidator{}, audit.NopRecorder{})
+
+	if _, err := service.ToggleEnabled(context.Background(), "role_custom_reviewer", roleadmin.ToggleEnabledInput{ActorUserID: "user_a", Enabled: false}); err != nil {
+		t.Fatalf("toggle role: %v", err)
+	}
+	assignable, err := useradmin.NewSQLStore(db).ListAssignableRoles(context.Background())
+	if err != nil {
+		t.Fatalf("list assignable roles: %v", err)
+	}
+	for _, role := range assignable {
+		if role.ID == "role_custom_reviewer" {
+			t.Fatalf("disabled role should not be assignable: %#v", assignable)
+		}
+	}
+}
+
+func TestSQLStoreDeleteCustomRoleCascadesDefinitionRows(t *testing.T) {
+	db := newRoleAdminMigratedSQLiteGormDB(t)
+	seedRoleAdminFixture(t, db)
+	service := roleadmin.NewService(roleadmin.NewSQLStore(db), &fakeRoleInvalidator{}, audit.NopRecorder{})
+
+	if err := service.DeleteRole(context.Background(), "role_custom_reviewer", "user_a"); err != nil {
+		t.Fatalf("delete role: %v", err)
+	}
+
+	assertRoleAdminCount(t, db, "roles", "id = 'role_custom_reviewer'", 0)
+	assertRoleAdminCount(t, db, "permissions", "role_id = 'role_custom_reviewer'", 0)
+	assertRoleAdminCount(t, db, "role_relations", "parent_role_id = 'role_custom_reviewer'", 0)
+}
+
 func hasRolePermission(permissions []roleadmin.PermissionInput, resource iam.Resource, action iam.Action, channels []string) bool {
 	for _, permission := range permissions {
 		if permission.Resource != resource || permission.Action != action {
@@ -205,5 +298,16 @@ func execRoleAdminSQL(t *testing.T, db *gorm.DB, query string) {
 	t.Helper()
 	if err := db.Exec(query).Error; err != nil {
 		t.Fatalf("exec fixture sql: %v\n%s", err, query)
+	}
+}
+
+func assertRoleAdminCount(t *testing.T, db *gorm.DB, table string, where string, expected int64) {
+	t.Helper()
+	var count int64
+	if err := db.Table(table).Where(where).Count(&count).Error; err != nil {
+		t.Fatalf("count %s: %v", table, err)
+	}
+	if count != expected {
+		t.Fatalf("expected count %d in %s where %s, got %d", expected, table, where, count)
 	}
 }

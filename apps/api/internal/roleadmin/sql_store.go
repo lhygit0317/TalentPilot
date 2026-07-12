@@ -3,6 +3,7 @@ package roleadmin
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -21,6 +22,12 @@ type SQLStore struct {
 
 func NewSQLStore(db *gorm.DB) *SQLStore {
 	return &SQLStore{db: db}
+}
+
+func (s *SQLStore) WithTransaction(ctx context.Context, fn func(Store) error) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(&SQLStore{db: tx})
+	})
 }
 
 func (s *SQLStore) ListRoles(ctx context.Context, query RoleListQuery) (RoleListResult, error) {
@@ -163,6 +170,156 @@ func (s *SQLStore) PermissionOptions(context.Context) (PermissionOptionsResult, 
 	}, nil
 }
 
+func (s *SQLStore) GetRoleRecord(ctx context.Context, roleID string) (RoleRecord, error) {
+	var row roleListRow
+	if err := s.db.WithContext(ctx).Table("roles").
+		Select(`
+			roles.id,
+			roles.label,
+			roles.description,
+			roles.is_system,
+			roles.enabled,
+			0 AS permission_count,
+			0 AS child_role_count,
+			COALESCE(reference_counts.reference_count, 0) AS reference_count
+		`).
+		Joins("LEFT JOIN (SELECT role_id, COUNT(*) AS reference_count FROM user_department_roles GROUP BY role_id) AS reference_counts ON reference_counts.role_id = roles.id").
+		Where("roles.id = ?", roleID).
+		Scan(&row).Error; err != nil {
+		return RoleRecord{}, err
+	}
+	if row.ID == "" {
+		return RoleRecord{}, ErrRoleNotFound
+	}
+	return RoleRecord{
+		ID:             row.ID,
+		Label:          row.Label,
+		Description:    row.Description,
+		IsSystem:       row.IsSystem,
+		Enabled:        row.Enabled,
+		ReferenceCount: row.ReferenceCount,
+	}, nil
+}
+
+func (s *SQLStore) RoleLabelExists(ctx context.Context, label string, excludeRoleID string) (bool, error) {
+	var count int64
+	db := s.db.WithContext(ctx).Table("roles").Where("label = ?", label)
+	if excludeRoleID != "" {
+		db = db.Where("id <> ?", excludeRoleID)
+	}
+	if err := db.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (s *SQLStore) ChildRolesExist(ctx context.Context, roleIDs []string) (bool, error) {
+	if len(roleIDs) == 0 {
+		return true, nil
+	}
+	var count int64
+	if err := s.db.WithContext(ctx).Table("roles").Where("id IN ?", roleIDs).Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count == int64(len(roleIDs)), nil
+}
+
+func (s *SQLStore) LoadRoleRelations(ctx context.Context) ([]iam.RoleRelation, error) {
+	var rows []struct {
+		ID           string `gorm:"column:id"`
+		ParentRoleID string `gorm:"column:parent_role_id"`
+		ChildRoleID  string `gorm:"column:child_role_id"`
+	}
+	if err := s.db.WithContext(ctx).Raw(`
+		SELECT id, parent_role_id, child_role_id
+		FROM role_relations
+		ORDER BY parent_role_id ASC, child_role_id ASC
+	`).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	relations := make([]iam.RoleRelation, 0, len(rows))
+	for _, row := range rows {
+		relations = append(relations, iam.RoleRelation{ID: row.ID, ParentRoleID: row.ParentRoleID, ChildRoleID: row.ChildRoleID})
+	}
+	return relations, nil
+}
+
+func (s *SQLStore) CreateRole(ctx context.Context, input RoleDefinitionRecord) (string, error) {
+	roleID := stableMutationID("role", input.Label)
+	if err := s.db.WithContext(ctx).Exec(`
+		INSERT INTO roles (id, label, description, is_system, enabled, created_at, created_by, updated_at)
+		VALUES (?, ?, ?, FALSE, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)
+	`, roleID, input.Label, input.Description, input.Enabled, input.ActorUserID).Error; err != nil {
+		return "", err
+	}
+	return roleID, nil
+}
+
+func (s *SQLStore) UpdateRole(ctx context.Context, roleID string, input RoleDefinitionRecord) error {
+	return s.db.WithContext(ctx).Exec(`
+		UPDATE roles
+		SET label = ?, description = ?, enabled = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, input.Label, input.Description, input.Enabled, roleID).Error
+}
+
+func (s *SQLStore) ReplaceRolePermissions(ctx context.Context, roleID string, permissions []PermissionInput) error {
+	if err := s.db.WithContext(ctx).Exec(`
+		DELETE FROM permissions
+		WHERE role_id = ?
+	`, roleID).Error; err != nil {
+		return err
+	}
+	for _, permission := range permissions {
+		rawConditions, err := encodeAttributeConditions(permission.AttributeConditions)
+		if err != nil {
+			return err
+		}
+		id := stableMutationID("permission", roleID, string(permission.Resource), string(permission.Action), rawConditions)
+		if err := s.db.WithContext(ctx).Exec(`
+			INSERT INTO permissions (id, role_id, resource, action, attribute_conditions, created_at)
+			VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`, id, roleID, permission.Resource, permission.Action, rawConditions).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SQLStore) ReplaceRoleChildren(ctx context.Context, roleID string, childRoleIDs []string) error {
+	if err := s.db.WithContext(ctx).Exec(`
+		DELETE FROM role_relations
+		WHERE parent_role_id = ?
+	`, roleID).Error; err != nil {
+		return err
+	}
+	for _, childRoleID := range childRoleIDs {
+		id := stableMutationID("role_relation", roleID, childRoleID)
+		if err := s.db.WithContext(ctx).Exec(`
+			INSERT INTO role_relations (id, parent_role_id, child_role_id, created_at)
+			VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+		`, id, roleID, childRoleID).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SQLStore) ToggleRoleEnabled(ctx context.Context, roleID string, enabled bool) error {
+	return s.db.WithContext(ctx).Exec(`
+		UPDATE roles
+		SET enabled = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, enabled, roleID).Error
+}
+
+func (s *SQLStore) DeleteRole(ctx context.Context, roleID string) error {
+	return s.db.WithContext(ctx).Exec(`
+		DELETE FROM roles
+		WHERE id = ?
+	`, roleID).Error
+}
+
 type roleListRow struct {
 	ID              string `gorm:"column:id"`
 	Label           string `gorm:"column:label"`
@@ -266,6 +423,18 @@ func decodeAttributeConditions(raw string) (iam.AttributeConditions, error) {
 	return conditions, nil
 }
 
+func encodeAttributeConditions(conditions iam.AttributeConditions) (string, error) {
+	conditions = normalizeAttributeConditions(conditions)
+	raw, err := json.Marshal(conditions)
+	if err != nil {
+		return "", err
+	}
+	if string(raw) == "null" {
+		return "{}", nil
+	}
+	return string(raw), nil
+}
+
 func conditionSummary(channels map[string]bool) string {
 	if len(channels) == 0 {
 		return "全部渠道"
@@ -320,5 +489,39 @@ func escapeLike(value string) string {
 	value = strings.ReplaceAll(value, `\`, `\\`)
 	value = strings.ReplaceAll(value, `%`, `\%`)
 	value = strings.ReplaceAll(value, `_`, `\_`)
+	return value
+}
+
+func stableMutationID(prefix string, parts ...string) string {
+	slugParts := make([]string, 0, len(parts)+1)
+	slugParts = append(slugParts, prefix)
+	for _, part := range parts {
+		slugParts = append(slugParts, stableIDPart(part))
+	}
+	return fmt.Sprintf("__%s__", strings.Join(slugParts, "_"))
+}
+
+func stableIDPart(value string) string {
+	replacer := strings.NewReplacer(
+		"__role_", "",
+		"__", "_",
+		".", "_",
+		"-", "_",
+		" ", "_",
+		"{", "_",
+		"}", "_",
+		"[", "_",
+		"]", "_",
+		"\"", "",
+		":", "_",
+		";", "_",
+		"=", "_",
+		",", "_",
+	)
+	value = replacer.Replace(strings.ToLower(value))
+	value = strings.Trim(value, "_")
+	if value == "" {
+		return "empty"
+	}
 	return value
 }

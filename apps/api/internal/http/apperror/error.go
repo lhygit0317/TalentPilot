@@ -60,6 +60,14 @@ const (
 	UserRoleBindingGuestProtected        Code = "USER_ROLE_BINDING_GUEST_PROTECTED"
 	UserRoleBindingSelfLockout           Code = "USER_ROLE_BINDING_SELF_LOCKOUT"
 	UserRoleBindingRoleDisabled          Code = "USER_ROLE_BINDING_ROLE_DISABLED"
+	RoleNotFound                         Code = "ROLE_NOT_FOUND"
+	RoleLabelInvalid                     Code = "ROLE_LABEL_INVALID"
+	RoleLabelDuplicate                   Code = "ROLE_LABEL_DUPLICATE"
+	RoleSystemProtected                  Code = "ROLE_SYSTEM_PROTECTED"
+	RoleInUse                            Code = "ROLE_IN_USE"
+	RolePermissionInvalid                Code = "ROLE_PERMISSION_INVALID"
+	RolePermissionDuplicate              Code = "ROLE_PERMISSION_DUPLICATE"
+	RoleRelationInvalid                  Code = "ROLE_RELATION_INVALID"
 	NotificationAccessDenied             Code = "NOTIFICATION_ACCESS_DENIED"
 	NotificationNotFound                 Code = "NOTIFICATION_NOT_FOUND"
 	NotificationListFailed               Code = "NOTIFICATION_LIST_FAILED"
@@ -172,9 +180,11 @@ func statusForCode(code Code) int {
 		return http.StatusGatewayTimeout
 	case PermissionDenied, ResumeDeleteDenied, JobAccessDenied, NotificationAccessDenied:
 		return http.StatusForbidden
-	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound, UserNotFound, UserRoleBindingNotFound, NotificationNotFound:
+	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound, UserNotFound, UserRoleBindingNotFound, RoleNotFound, NotificationNotFound:
 		return http.StatusNotFound
-	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, UserRoleBindingDuplicate, UserRoleBindingBatchEmpty, UserRoleBindingBatchTooLarge, UserRoleBindingGuestProtected, UserRoleBindingSelfLockout, UserRoleBindingRoleDisabled, RecommendationTargetPositionOffline, RecommendationTargetPositionMismatch, RecommendationChannelMismatch, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
+	case RoleLabelDuplicate:
+		return http.StatusConflict
+	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, UserRoleBindingDuplicate, UserRoleBindingBatchEmpty, UserRoleBindingBatchTooLarge, UserRoleBindingGuestProtected, UserRoleBindingSelfLockout, UserRoleBindingRoleDisabled, RoleLabelInvalid, RoleSystemProtected, RoleInUse, RolePermissionInvalid, RolePermissionDuplicate, RoleRelationInvalid, RecommendationTargetPositionOffline, RecommendationTargetPositionMismatch, RecommendationChannelMismatch, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -285,6 +295,22 @@ func defaultMessage(code Code) string {
 		return "不能解除自己的最后一个业务角色"
 	case UserRoleBindingRoleDisabled:
 		return "该角色已禁用，不能分配"
+	case RoleNotFound:
+		return "角色不存在"
+	case RoleLabelInvalid:
+		return "角色名称需为 2-20 个字符"
+	case RoleLabelDuplicate:
+		return "角色名称已存在"
+	case RoleSystemProtected:
+		return "系统预置角色不允许执行该操作"
+	case RoleInUse:
+		return "该角色仍被用户角色绑定引用"
+	case RolePermissionInvalid:
+		return "角色权限不在允许范围内"
+	case RolePermissionDuplicate:
+		return "角色权限重复"
+	case RoleRelationInvalid:
+		return "角色包含关系无效"
 	case NotificationAccessDenied:
 		return "没有通知权限"
 	case NotificationNotFound:
