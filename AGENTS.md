@@ -133,6 +133,7 @@ Implemented command surface:
 - E6 User and Role Management SPEC: [docs/specs/007-user-role-management.md](docs/specs/007-user-role-management.md)
 - E6 implementation plan: [docs/superpowers/plans/2026-07-12-e6-user-role-management-implementation.md](docs/superpowers/plans/2026-07-12-e6-user-role-management-implementation.md)
 - E7 Notification Center SPEC: [docs/specs/009-notification-center.md](docs/specs/009-notification-center.md)
+- E7 implementation plan: [docs/superpowers/plans/2026-07-12-e7-notification-center-implementation.md](docs/superpowers/plans/2026-07-12-e7-notification-center-implementation.md)
 - Project checklist: [docs/project-status.md](docs/project-status.md)
 - ADR index:
   - [docs/adr/0001-use-monorepo.md](docs/adr/0001-use-monorepo.md)
