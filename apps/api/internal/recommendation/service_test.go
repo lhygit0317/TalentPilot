@@ -2,6 +2,7 @@ package recommendation_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/talentpilot/talentpilot/apps/api/internal/audit"
@@ -61,11 +62,31 @@ func TestServiceRouteGroupsByDepartmentAndMarksBest(t *testing.T) {
 	}
 }
 
+func TestServiceSendReturnsTargetValidationErrors(t *testing.T) {
+	store := &fakeRecommendationStore{sendErr: recommendation.ErrTargetPositionOffline}
+	service := recommendation.NewService(store, audit.NopRecorder{})
+
+	_, err := service.Send(context.Background(), recommendation.SendInput{
+		ActorUserID:  "user_1",
+		ResumeID:     "resume_1",
+		DepartmentID: "dept_a",
+		PositionID:   "position_off",
+	})
+	if !errors.Is(err, recommendation.ErrTargetPositionOffline) {
+		t.Fatalf("expected offline error, got %v", err)
+	}
+	if store.sendCommand.PositionID != "position_off" {
+		t.Fatalf("expected send command to reach store, got %#v", store.sendCommand)
+	}
+}
+
 type fakeRecommendationStore struct {
-	resume     recommendation.ResumeContext
-	positions  []recommendation.PositionContext
-	contacts   map[string]recommendation.DepartmentContacts
-	routeQuery recommendation.RoutePositionQuery
+	resume      recommendation.ResumeContext
+	positions   []recommendation.PositionContext
+	contacts    map[string]recommendation.DepartmentContacts
+	routeQuery  recommendation.RoutePositionQuery
+	sendCommand recommendation.SendCommand
+	sendErr     error
 }
 
 func (f *fakeRecommendationStore) GetResume(ctx context.Context, resumeID string, scope iam.ScopePredicate) (recommendation.ResumeContext, error) {
@@ -82,5 +103,9 @@ func (f *fakeRecommendationStore) ListDepartmentContacts(ctx context.Context, de
 }
 
 func (f *fakeRecommendationStore) SendRecommendation(ctx context.Context, command recommendation.SendCommand) (recommendation.SendResult, error) {
-	return recommendation.SendResult{}, recommendation.ErrSendFailed
+	f.sendCommand = command
+	if f.sendErr != nil {
+		return recommendation.SendResult{}, f.sendErr
+	}
+	return recommendation.SendResult{ResumeID: "resume_copy"}, nil
 }

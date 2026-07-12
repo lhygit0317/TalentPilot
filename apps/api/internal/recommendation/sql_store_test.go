@@ -80,6 +80,75 @@ func TestSQLStoreListsDepartmentContactsByPresetRole(t *testing.T) {
 	}
 }
 
+func TestSQLStoreSendRecommendationCreatesCopyAndNotifications(t *testing.T) {
+	db := newRecommendationMigratedSQLiteGormDB(t)
+	seedRecommendationRoutingFixture(t, db)
+	seedRecommendationSendFixture(t, db)
+	store := recommendation.NewSQLStore(db)
+
+	result, err := store.SendRecommendation(context.Background(), recommendation.SendCommand{
+		ActorUserID:                 "user_recommender",
+		ActorName:                   "推荐人",
+		ResumeID:                    "resume_source",
+		DepartmentID:                "dept_target",
+		PositionID:                  "position_social_on",
+		ResumeGetScope:              recommendationResumeScope(iam.ScopeBranch{DepartmentIDs: []string{"dept_source"}, Channels: []string{"social"}}),
+		ResumeCreateScope:           iam.ScopePredicate{Resource: iam.ResourceResume, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{DepartmentIDs: []string{"dept_target"}, Channels: []string{"social"}}}},
+		DepartmentResumeCreateScope: iam.ScopePredicate{Resource: iam.ResourceDepartmentResume, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{DepartmentIDs: []string{"dept_target"}}}},
+		PositionResumeCreateScope:   iam.ScopePredicate{Resource: iam.ResourcePositionResume, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{DepartmentIDs: []string{"dept_target"}}}},
+		NotificationCreateScope:     iam.ScopePredicate{Resource: iam.ResourceNotification, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{AllDepartments: true}}},
+	})
+	if err != nil {
+		t.Fatalf("send recommendation: %v", err)
+	}
+	if result.ResumeID == "" || result.ResumeID == "resume_source" || result.NotifiedCount != 4 {
+		t.Fatalf("unexpected send result: %#v", result)
+	}
+	if result.Department.ID != "dept_target" || result.Position.ID != "position_social_on" || result.Message != "已推荐到「智算调度部」· 已通知 4 位相关人员" {
+		t.Fatalf("unexpected response summary: %#v", result)
+	}
+	assertRecommendationCount(t, db, "resumes", "id = '"+result.ResumeID+"' AND source = '推荐' AND source_by = '推荐人' AND chan = 'social'", 1)
+	assertRecommendationCount(t, db, "department_resumes", "resume_id = '"+result.ResumeID+"' AND department_id = 'dept_target'", 1)
+	assertRecommendationCount(t, db, "position_resumes", "resume_id = '"+result.ResumeID+"' AND position_id = 'position_social_on' AND kind = 'recommended'", 1)
+	assertRecommendationCount(t, db, "notifications", "resume_id = '"+result.ResumeID+"' AND to_user_id = 'user_hrbp' AND read = false", 1)
+	assertRecommendationCount(t, db, "notifications", "resume_id = '"+result.ResumeID+"' AND to_user_id = 'user_manager' AND read = false", 1)
+	assertRecommendationCount(t, db, "notifications", "resume_id = '"+result.ResumeID+"' AND to_user_id = 'user_trainee' AND read = false", 1)
+	assertRecommendationCount(t, db, "notifications", "resume_id = '"+result.ResumeID+"' AND to_user_id = 'user_recommender' AND read = true", 1)
+}
+
+func TestSQLStoreSendRecommendationReusesExistingDepartmentCopy(t *testing.T) {
+	db := newRecommendationMigratedSQLiteGormDB(t)
+	seedRecommendationRoutingFixture(t, db)
+	seedRecommendationSendFixture(t, db)
+	store := recommendation.NewSQLStore(db)
+	command := recommendation.SendCommand{
+		ActorUserID:                 "user_recommender",
+		ActorName:                   "推荐人",
+		ResumeID:                    "resume_source",
+		DepartmentID:                "dept_target",
+		PositionID:                  "position_social_on",
+		ResumeGetScope:              recommendationResumeScope(iam.ScopeBranch{DepartmentIDs: []string{"dept_source"}, Channels: []string{"social"}}),
+		ResumeCreateScope:           iam.ScopePredicate{Resource: iam.ResourceResume, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{DepartmentIDs: []string{"dept_target"}, Channels: []string{"social"}}}},
+		DepartmentResumeCreateScope: iam.ScopePredicate{Resource: iam.ResourceDepartmentResume, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{DepartmentIDs: []string{"dept_target"}}}},
+		PositionResumeCreateScope:   iam.ScopePredicate{Resource: iam.ResourcePositionResume, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{DepartmentIDs: []string{"dept_target"}}}},
+		NotificationCreateScope:     iam.ScopePredicate{Resource: iam.ResourceNotification, Action: iam.ActionCreate, Branches: []iam.ScopeBranch{{AllDepartments: true}}},
+	}
+
+	first, err := store.SendRecommendation(context.Background(), command)
+	if err != nil {
+		t.Fatalf("first send: %v", err)
+	}
+	second, err := store.SendRecommendation(context.Background(), command)
+	if err != nil {
+		t.Fatalf("second send: %v", err)
+	}
+	if first.ResumeID != second.ResumeID || !second.ReusedExistingCopy {
+		t.Fatalf("expected second send to reuse copy, first=%#v second=%#v", first, second)
+	}
+	assertRecommendationCount(t, db, "resumes", "normalized_name = 'zhangsan'", 2)
+	assertRecommendationCount(t, db, "position_resumes", "resume_id = '"+first.ResumeID+"' AND position_id = 'position_social_on' AND kind = 'recommended'", 1)
+}
+
 func recommendationResumeScope(branch iam.ScopeBranch) iam.ScopePredicate {
 	return iam.ScopePredicate{Resource: iam.ResourceResume, Action: iam.ActionGet, Branches: []iam.ScopeBranch{branch}}
 }
@@ -163,10 +232,31 @@ func seedRecommendationRoutingFixture(t *testing.T, db *gorm.DB) {
 	`)
 }
 
+func seedRecommendationSendFixture(t *testing.T, db *gorm.DB) {
+	t.Helper()
+
+	execRecommendationSQL(t, db, `
+		INSERT INTO user_department_roles (id, user_id, department_id, role_id, created_at, created_by)
+		VALUES ('udr_recommender_target', 'user_recommender', 'dept_target', '__role_hrbp__', CURRENT_TIMESTAMP, 'user_recommender')
+	`)
+}
+
 func execRecommendationSQL(t *testing.T, db *gorm.DB, query string) {
 	t.Helper()
 
 	if err := db.Exec(query).Error; err != nil {
 		t.Fatalf("exec %q: %v", query, err)
+	}
+}
+
+func assertRecommendationCount(t *testing.T, db *gorm.DB, table string, where string, expected int) {
+	t.Helper()
+
+	var count int64
+	if err := db.Raw("SELECT COUNT(*) FROM " + table + " WHERE " + where).Scan(&count).Error; err != nil {
+		t.Fatalf("count %s where %s: %v", table, where, err)
+	}
+	if count != int64(expected) {
+		t.Fatalf("expected %s where %s count %d, got %d", table, where, expected, count)
 	}
 }
