@@ -14,6 +14,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 	"github.com/talentpilot/talentpilot/apps/api/internal/matching"
 	"github.com/talentpilot/talentpilot/apps/api/internal/organization"
+	"github.com/talentpilot/talentpilot/apps/api/internal/recommendation"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
 )
 
@@ -23,15 +24,16 @@ type Server struct {
 }
 
 type Options struct {
-	AuthService         AuthService
-	FrontendOrigin      string
-	RequireHTTPS        bool
-	SecureCookies       bool
-	TrustForwardedProto bool
-	IAMService          IAMService
-	ResumeService       ResumeService
-	OrganizationService OrganizationService
-	MatchingService     MatchingService
+	AuthService           AuthService
+	FrontendOrigin        string
+	RequireHTTPS          bool
+	SecureCookies         bool
+	TrustForwardedProto   bool
+	IAMService            IAMService
+	ResumeService         ResumeService
+	OrganizationService   OrganizationService
+	MatchingService       MatchingService
+	RecommendationService RecommendationService
 }
 
 type AuthService interface {
@@ -75,6 +77,11 @@ type MatchingService interface {
 	GenerateInterviewQuestions(context.Context, matching.InterviewQuestionInput) (matching.InterviewQuestionResult, error)
 }
 
+type RecommendationService interface {
+	Route(context.Context, recommendation.RouteInput) (recommendation.RouteResult, error)
+	Send(context.Context, recommendation.SendInput) (recommendation.SendResult, error)
+}
+
 type healthOutput struct {
 	Body struct {
 		Status string `json:"status" example:"ok"`
@@ -104,6 +111,7 @@ func NewServerWithOptions(options Options) *Server {
 	registerResumeRoutes(api, options)
 	registerOrganizationRoutes(api, options)
 	registerMatchingRoutes(api, options)
+	registerRecommendationRoutes(api, options)
 
 	return &Server{Echo: e, API: api}
 }

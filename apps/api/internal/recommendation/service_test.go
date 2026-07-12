@@ -21,15 +21,15 @@ func TestServiceRouteGroupsByDepartmentAndMarksBest(t *testing.T) {
 			Keywords:       []string{"Go"},
 			Traits:         []string{"稳定"},
 			ExpBase:        88,
-			Department:     recommendation.DepartmentSummary{ID: "dept_source", Name: "来源部门"},
+			Department:     recommendation.RecommendationDepartmentSummary{ID: "dept_source", Name: "来源部门"},
 			NormalizedName: "zhangsan",
 		},
 		positions: []recommendation.PositionContext{
-			{ID: "position_low", Name: "低分岗位", Channel: "social", Status: "on", Department: recommendation.DepartmentSummary{ID: "dept_a", Name: "A 部门"}, Keywords: []string{"Rust"}},
-			{ID: "position_high", Name: "高分岗位", Channel: "social", Status: "on", Department: recommendation.DepartmentSummary{ID: "dept_a", Name: "A 部门"}, Keywords: []string{"Go"}, ImplicitTags: []matching.MatchingImplicitTag{{Name: "稳定", Weight: 40}}},
-			{ID: "position_b", Name: "B 岗位", Channel: "social", Status: "on", Department: recommendation.DepartmentSummary{ID: "dept_b", Name: "B 部门"}, Keywords: []string{"Go"}},
+			{ID: "position_low", Name: "低分岗位", Channel: "social", Status: "on", Department: recommendation.RecommendationDepartmentSummary{ID: "dept_a", Name: "A 部门"}, Keywords: []string{"Rust"}},
+			{ID: "position_high", Name: "高分岗位", Channel: "social", Status: "on", Department: recommendation.RecommendationDepartmentSummary{ID: "dept_a", Name: "A 部门"}, Keywords: []string{"Go"}, ImplicitTags: []matching.MatchingImplicitTag{{Name: "稳定", Weight: 40}}},
+			{ID: "position_b", Name: "B 岗位", Channel: "social", Status: "on", Department: recommendation.RecommendationDepartmentSummary{ID: "dept_b", Name: "B 部门"}, Keywords: []string{"Go"}},
 		},
-		contacts: map[string]recommendation.DepartmentContacts{
+		contacts: map[string]recommendation.RecommendationDepartmentContacts{
 			"dept_a": {HRBPs: []string{"李四"}, Managers: []string{"王五"}, Trainees: []string{"赵六"}},
 			"dept_b": {HRBPs: []string{"孙七"}},
 		},
@@ -80,12 +80,43 @@ func TestServiceSendReturnsTargetValidationErrors(t *testing.T) {
 	}
 }
 
+func TestServiceSendRecordsRecommendationAudit(t *testing.T) {
+	recorder := &recordingRecommendationAudit{}
+	store := &fakeRecommendationStore{sendResult: recommendation.SendResult{
+		ResumeID:           "resume_copy",
+		SourceResumeID:     "resume_source",
+		Department:         recommendation.RecommendationDepartmentSummary{ID: "dept_a", Name: "智算调度部"},
+		Position:           recommendation.RecommendationPositionSummary{ID: "position_a", Name: "调度工程师"},
+		CandidateName:      "张三",
+		NotifiedCount:      3,
+		ReusedExistingCopy: true,
+	}}
+	service := recommendation.NewService(store, recorder)
+
+	_, err := service.Send(context.Background(), recommendation.SendInput{
+		ActorUserID:  "user_1",
+		ResumeID:     "resume_source",
+		DepartmentID: "dept_a",
+		PositionID:   "position_a",
+	})
+	if err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	if len(recorder.events) != 1 || recorder.events[0].Type != audit.EventRecommendationSent {
+		t.Fatalf("expected recommendation audit event, got %#v", recorder.events)
+	}
+	if recorder.events[0].After["finalResumeId"] != "resume_copy" || recorder.events[0].After["notifiedCount"] != 3 {
+		t.Fatalf("unexpected audit payload: %#v", recorder.events[0])
+	}
+}
+
 type fakeRecommendationStore struct {
 	resume      recommendation.ResumeContext
 	positions   []recommendation.PositionContext
-	contacts    map[string]recommendation.DepartmentContacts
+	contacts    map[string]recommendation.RecommendationDepartmentContacts
 	routeQuery  recommendation.RoutePositionQuery
 	sendCommand recommendation.SendCommand
+	sendResult  recommendation.SendResult
 	sendErr     error
 }
 
@@ -98,7 +129,7 @@ func (f *fakeRecommendationStore) ListRoutePositions(ctx context.Context, query 
 	return f.positions, nil
 }
 
-func (f *fakeRecommendationStore) ListDepartmentContacts(ctx context.Context, departmentIDs []string) (map[string]recommendation.DepartmentContacts, error) {
+func (f *fakeRecommendationStore) ListDepartmentContacts(ctx context.Context, departmentIDs []string) (map[string]recommendation.RecommendationDepartmentContacts, error) {
 	return f.contacts, nil
 }
 
@@ -107,5 +138,17 @@ func (f *fakeRecommendationStore) SendRecommendation(ctx context.Context, comman
 	if f.sendErr != nil {
 		return recommendation.SendResult{}, f.sendErr
 	}
+	if f.sendResult.ResumeID != "" {
+		return f.sendResult, nil
+	}
 	return recommendation.SendResult{ResumeID: "resume_copy"}, nil
+}
+
+type recordingRecommendationAudit struct {
+	events []audit.Event
+}
+
+func (r *recordingRecommendationAudit) Record(ctx context.Context, event audit.Event) error {
+	r.events = append(r.events, event)
+	return nil
 }

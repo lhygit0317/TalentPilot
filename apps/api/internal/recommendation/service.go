@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/talentpilot/talentpilot/apps/api/internal/audit"
+	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 	"github.com/talentpilot/talentpilot/apps/api/internal/matching"
 )
 
@@ -42,7 +43,7 @@ func (s *Service) Route(ctx context.Context, input RouteInput) (RouteResult, err
 		})
 		row := RouteRow{
 			Department: position.Department,
-			Position: PositionSummary{
+			Position: RecommendationPositionSummary{
 				ID:      position.ID,
 				Name:    position.Name,
 				Channel: position.Channel,
@@ -76,7 +77,7 @@ func (s *Service) Route(ctx context.Context, input RouteInput) (RouteResult, err
 	}
 
 	return RouteResult{
-		Resume: ResumeSummary{
+		Resume: RecommendationResumeSummary{
 			ID:                resume.ID,
 			Name:              resume.Name,
 			Channel:           resume.Channel,
@@ -90,7 +91,15 @@ func (s *Service) Route(ctx context.Context, input RouteInput) (RouteResult, err
 }
 
 func (s *Service) Send(ctx context.Context, input SendInput) (SendResult, error) {
-	return s.store.SendRecommendation(ctx, SendCommand(input))
+	result, err := s.store.SendRecommendation(ctx, SendCommand(input))
+	if err != nil {
+		return SendResult{}, err
+	}
+	s.recordSent(ctx, input.ActorUserID, result)
+	if result.NotificationFailed {
+		s.recordNotificationFailed(ctx, input.ActorUserID, result)
+	}
+	return result, nil
 }
 
 func routeLess(left RouteRow, right RouteRow) bool {
@@ -103,7 +112,7 @@ func routeLess(left RouteRow, right RouteRow) bool {
 	return left.Position.Name < right.Position.Name
 }
 
-func normalizeContacts(contacts DepartmentContacts) DepartmentContacts {
+func normalizeContacts(contacts RecommendationDepartmentContacts) RecommendationDepartmentContacts {
 	if contacts.HRBPs == nil {
 		contacts.HRBPs = []string{}
 	}
@@ -114,4 +123,43 @@ func normalizeContacts(contacts DepartmentContacts) DepartmentContacts {
 		contacts.Trainees = []string{}
 	}
 	return contacts
+}
+
+func (s *Service) recordSent(ctx context.Context, actorUserID string, result SendResult) {
+	_ = s.audit.Record(ctx, audit.Event{
+		Type:        audit.EventRecommendationSent,
+		UserID:      actorUserID,
+		ActorUserID: actorUserID,
+		Resource:    string(iam.ResourcePositionResume),
+		Action:      string(iam.ActionCreate),
+		TargetID:    result.ResumeID,
+		Result:      "succeeded",
+		After: map[string]any{
+			"sourceResumeId":     result.SourceResumeID,
+			"finalResumeId":      result.ResumeID,
+			"targetDepartmentId": result.Department.ID,
+			"targetPositionId":   result.Position.ID,
+			"chan":               result.Position.Channel,
+			"notifiedCount":      result.NotifiedCount,
+			"reusedExistingCopy": result.ReusedExistingCopy,
+		},
+	})
+}
+
+func (s *Service) recordNotificationFailed(ctx context.Context, actorUserID string, result SendResult) {
+	_ = s.audit.Record(ctx, audit.Event{
+		Type:        audit.EventRecommendationNotificationFailed,
+		UserID:      actorUserID,
+		ActorUserID: actorUserID,
+		Resource:    string(iam.ResourceNotification),
+		Action:      string(iam.ActionCreate),
+		TargetID:    result.ResumeID,
+		Result:      "failed",
+		After: map[string]any{
+			"finalResumeId":      result.ResumeID,
+			"targetDepartmentId": result.Department.ID,
+			"targetPositionId":   result.Position.ID,
+			"errorCode":          result.NotificationErrorCode,
+		},
+	})
 }

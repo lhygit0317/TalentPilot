@@ -1183,6 +1183,142 @@
         ],
         "type": "object"
       },
+      "RecommendationDepartmentContacts": {
+        "additionalProperties": false,
+        "properties": {
+          "hrbps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "managers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "trainees": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "hrbps",
+          "managers",
+          "trainees"
+        ],
+        "type": "object"
+      },
+      "RecommendationDepartmentSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "RecommendationPositionSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "chan": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "chan",
+          "level"
+        ],
+        "type": "object"
+      },
+      "RecommendationResumeSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "chan": {
+            "type": "string"
+          },
+          "currentDepartment": {
+            "$ref": "#/components/schemas/RecommendationDepartmentSummary"
+          },
+          "id": {
+            "type": "string"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "chan",
+          "pos",
+          "currentDepartment",
+          "keywords"
+        ],
+        "type": "object"
+      },
+      "RecommendationRouteBody": {
+        "additionalProperties": false,
+        "properties": {
+          "resumeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resumeId"
+        ],
+        "type": "object"
+      },
+      "RecommendationSendBody": {
+        "additionalProperties": false,
+        "properties": {
+          "departmentId": {
+            "type": "string"
+          },
+          "positionId": {
+            "type": "string"
+          },
+          "resumeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resumeId",
+          "departmentId",
+          "positionId"
+        ],
+        "type": "object"
+      },
       "ResumeContext": {
         "additionalProperties": false,
         "properties": {
@@ -1258,6 +1394,58 @@
         ],
         "type": "object"
       },
+      "RouteResult": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resume": {
+            "$ref": "#/components/schemas/RecommendationResumeSummary"
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/RouteRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "resume",
+          "routes",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "RouteRow": {
+        "additionalProperties": false,
+        "properties": {
+          "best": {
+            "type": "boolean"
+          },
+          "contacts": {
+            "$ref": "#/components/schemas/RecommendationDepartmentContacts"
+          },
+          "department": {
+            "$ref": "#/components/schemas/RecommendationDepartmentSummary"
+          },
+          "position": {
+            "$ref": "#/components/schemas/RecommendationPositionSummary"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          }
+        },
+        "required": [
+          "department",
+          "position",
+          "score",
+          "contacts",
+          "best"
+        ],
+        "type": "object"
+      },
       "Score": {
         "additionalProperties": false,
         "properties": {
@@ -1287,6 +1475,51 @@
           "experience",
           "implicit",
           "judgement"
+        ],
+        "type": "object"
+      },
+      "SendResult": {
+        "additionalProperties": false,
+        "properties": {
+          "candidateName": {
+            "type": "string"
+          },
+          "department": {
+            "$ref": "#/components/schemas/RecommendationDepartmentSummary"
+          },
+          "message": {
+            "type": "string"
+          },
+          "notifiedCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "position": {
+            "$ref": "#/components/schemas/RecommendationPositionSummary"
+          },
+          "resumeId": {
+            "type": "string"
+          },
+          "reusedExistingCopy": {
+            "type": "boolean"
+          },
+          "selfNotificationRead": {
+            "type": "boolean"
+          },
+          "sourceResumeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resumeId",
+          "sourceResumeId",
+          "department",
+          "position",
+          "candidateName",
+          "reusedExistingCopy",
+          "notifiedCount",
+          "selfNotificationRead",
+          "message"
         ],
         "type": "object"
       },
@@ -2732,6 +2965,148 @@
         "summary": "Update position",
         "tags": [
           "organization"
+        ]
+      }
+    },
+    "/recommendations/route": {
+      "post": {
+        "operationId": "post-recommendation-route",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRouteBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Route a resume to matching departments",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
+    "/recommendations/send": {
+      "post": {
+        "operationId": "post-recommendation-send",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationSendBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Send a resume recommendation",
+        "tags": [
+          "recommendations"
         ]
       }
     },

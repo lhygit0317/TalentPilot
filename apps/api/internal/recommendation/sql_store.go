@@ -93,8 +93,8 @@ func (s *SQLStore) ListRoutePositions(ctx context.Context, query RoutePositionQu
 	return positions, nil
 }
 
-func (s *SQLStore) ListDepartmentContacts(ctx context.Context, departmentIDs []string) (map[string]DepartmentContacts, error) {
-	contacts := map[string]DepartmentContacts{}
+func (s *SQLStore) ListDepartmentContacts(ctx context.Context, departmentIDs []string) (map[string]RecommendationDepartmentContacts, error) {
+	contacts := map[string]RecommendationDepartmentContacts{}
 	if len(departmentIDs) == 0 {
 		return contacts, nil
 	}
@@ -175,8 +175,8 @@ func (s *SQLStore) SendRecommendation(ctx context.Context, command SendCommand) 
 		result = SendResult{
 			ResumeID:           finalResumeID,
 			SourceResumeID:     source.ID,
-			Department:         DepartmentSummary{ID: target.DepartmentID, Name: target.DepartmentName},
-			Position:           PositionSummary{ID: target.ID, Name: target.Name, Channel: target.Channel, Level: target.Level},
+			Department:         RecommendationDepartmentSummary{ID: target.DepartmentID, Name: target.DepartmentName},
+			Position:           RecommendationPositionSummary{ID: target.ID, Name: target.Name, Channel: target.Channel, Level: target.Level},
 			CandidateName:      source.Name,
 			ReusedExistingCopy: reused,
 		}
@@ -483,7 +483,7 @@ func (r resumeRow) context() (ResumeContext, error) {
 		Pos:            r.Pos,
 		Source:         r.Source,
 		SourceBy:       r.SourceBy,
-		Department:     DepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
+		Department:     RecommendationDepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
 		Keywords:       keywords,
 		Traits:         traits,
 		ExpBase:        r.ExpBase,
@@ -575,7 +575,7 @@ func (r positionRow) context() (PositionContext, error) {
 	return PositionContext{
 		ID:           r.ID,
 		Name:         r.Name,
-		Department:   DepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
+		Department:   RecommendationDepartmentSummary{ID: r.DepartmentID, Name: r.DepartmentName},
 		Channel:      r.Channel,
 		Level:        r.Level,
 		Status:       r.Status,

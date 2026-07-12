@@ -21,11 +21,11 @@ var (
 type Store interface {
 	GetResume(context.Context, string, iam.ScopePredicate) (ResumeContext, error)
 	ListRoutePositions(context.Context, RoutePositionQuery) ([]PositionContext, error)
-	ListDepartmentContacts(context.Context, []string) (map[string]DepartmentContacts, error)
+	ListDepartmentContacts(context.Context, []string) (map[string]RecommendationDepartmentContacts, error)
 	SendRecommendation(context.Context, SendCommand) (SendResult, error)
 }
 
-type DepartmentSummary struct {
+type RecommendationDepartmentSummary struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -38,7 +38,7 @@ type ResumeContext struct {
 	Pos            string
 	Source         string
 	SourceBy       string
-	Department     DepartmentSummary
+	Department     RecommendationDepartmentSummary
 	Keywords       []string
 	Traits         []string
 	ExpBase        int
@@ -48,7 +48,7 @@ type ResumeContext struct {
 type PositionContext struct {
 	ID           string
 	Name         string
-	Department   DepartmentSummary
+	Department   RecommendationDepartmentSummary
 	Channel      string
 	Level        string
 	Status       string
@@ -69,36 +69,36 @@ type RouteInput struct {
 }
 
 type RouteResult struct {
-	Resume    ResumeSummary `json:"resume"`
-	Routes    []RouteRow    `json:"routes" nullable:"false"`
-	CreatedAt time.Time     `json:"createdAt"`
+	Resume    RecommendationResumeSummary `json:"resume"`
+	Routes    []RouteRow                  `json:"routes" nullable:"false"`
+	CreatedAt time.Time                   `json:"createdAt"`
 }
 
-type ResumeSummary struct {
-	ID                string            `json:"id"`
-	Name              string            `json:"name"`
-	Channel           string            `json:"chan"`
-	Pos               string            `json:"pos"`
-	CurrentDepartment DepartmentSummary `json:"currentDepartment"`
-	Keywords          []string          `json:"keywords" nullable:"false"`
+type RecommendationResumeSummary struct {
+	ID                string                          `json:"id"`
+	Name              string                          `json:"name"`
+	Channel           string                          `json:"chan"`
+	Pos               string                          `json:"pos"`
+	CurrentDepartment RecommendationDepartmentSummary `json:"currentDepartment"`
+	Keywords          []string                        `json:"keywords" nullable:"false"`
 }
 
 type RouteRow struct {
-	Department DepartmentSummary  `json:"department"`
-	Position   PositionSummary    `json:"position"`
-	Score      matching.Score     `json:"score"`
-	Contacts   DepartmentContacts `json:"contacts"`
-	Best       bool               `json:"best"`
+	Department RecommendationDepartmentSummary  `json:"department"`
+	Position   RecommendationPositionSummary    `json:"position"`
+	Score      matching.Score                   `json:"score"`
+	Contacts   RecommendationDepartmentContacts `json:"contacts"`
+	Best       bool                             `json:"best"`
 }
 
-type PositionSummary struct {
+type RecommendationPositionSummary struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
 	Channel string `json:"chan"`
 	Level   string `json:"level"`
 }
 
-type DepartmentContacts struct {
+type RecommendationDepartmentContacts struct {
 	HRBPs    []string `json:"hrbps" nullable:"false"`
 	Managers []string `json:"managers" nullable:"false"`
 	Trainees []string `json:"trainees" nullable:"false"`
@@ -120,15 +120,15 @@ type SendInput struct {
 type SendCommand = SendInput
 
 type SendResult struct {
-	ResumeID              string            `json:"resumeId"`
-	SourceResumeID        string            `json:"sourceResumeId"`
-	Department            DepartmentSummary `json:"department"`
-	Position              PositionSummary   `json:"position"`
-	CandidateName         string            `json:"candidateName"`
-	ReusedExistingCopy    bool              `json:"reusedExistingCopy"`
-	NotifiedCount         int               `json:"notifiedCount"`
-	SelfNotificationRead  bool              `json:"selfNotificationRead"`
-	Message               string            `json:"message"`
-	NotificationFailed    bool              `json:"-"`
-	NotificationErrorCode string            `json:"-"`
+	ResumeID              string                          `json:"resumeId"`
+	SourceResumeID        string                          `json:"sourceResumeId"`
+	Department            RecommendationDepartmentSummary `json:"department"`
+	Position              RecommendationPositionSummary   `json:"position"`
+	CandidateName         string                          `json:"candidateName"`
+	ReusedExistingCopy    bool                            `json:"reusedExistingCopy"`
+	NotifiedCount         int                             `json:"notifiedCount"`
+	SelfNotificationRead  bool                            `json:"selfNotificationRead"`
+	Message               string                          `json:"message"`
+	NotificationFailed    bool                            `json:"-"`
+	NotificationErrorCode string                          `json:"-"`
 }

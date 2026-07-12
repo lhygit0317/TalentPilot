@@ -52,6 +52,11 @@ const (
 	PositionDuplicateImplicitTag         Code = "POSITION_DUPLICATE_IMPLICIT_TAG"
 	PositionInvalidImplicitWeight        Code = "POSITION_INVALID_IMPLICIT_WEIGHT"
 	PositionDeleteHasHistory             Code = "POSITION_DELETE_HAS_HISTORY"
+	RecommendationRouteFailed            Code = "RECOMMENDATION_ROUTE_FAILED"
+	RecommendationTargetPositionOffline  Code = "RECOMMENDATION_TARGET_POSITION_OFFLINE"
+	RecommendationTargetPositionMismatch Code = "RECOMMENDATION_TARGET_POSITION_MISMATCH"
+	RecommendationChannelMismatch        Code = "RECOMMENDATION_CHANNEL_MISMATCH"
+	RecommendationSendFailed             Code = "RECOMMENDATION_SEND_FAILED"
 	MatchingPositionOffline              Code = "MATCHING_POSITION_OFFLINE"
 	MatchingParseFailed                  Code = "MATCHING_PARSE_FAILED"
 	MatchingInterviewFailed              Code = "MATCHING_INTERVIEW_FAILED"
@@ -157,7 +162,7 @@ func statusForCode(code Code) int {
 		return http.StatusForbidden
 	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound:
 		return http.StatusNotFound
-	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
+	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, RecommendationTargetPositionOffline, RecommendationTargetPositionMismatch, RecommendationChannelMismatch, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -252,6 +257,16 @@ func defaultMessage(code Code) string {
 		return "隐性标签权重不合法"
 	case PositionDeleteHasHistory:
 		return "岗位已有解析或推荐历史，请使用下架"
+	case RecommendationRouteFailed:
+		return "智能分流失败，请稍后重试"
+	case RecommendationTargetPositionOffline:
+		return "目标岗位已下架，不能推荐"
+	case RecommendationTargetPositionMismatch:
+		return "目标岗位与部门不匹配"
+	case RecommendationChannelMismatch:
+		return "目标岗位与简历渠道不一致"
+	case RecommendationSendFailed:
+		return "推荐失败，请稍后重试"
 	case MatchingPositionOffline:
 		return "岗位已下架，不能参与解析"
 	case MatchingParseFailed:

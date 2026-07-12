@@ -12,6 +12,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/matching"
 	"github.com/talentpilot/talentpilot/apps/api/internal/organization"
 	"github.com/talentpilot/talentpilot/apps/api/internal/platform/db"
+	"github.com/talentpilot/talentpilot/apps/api/internal/recommendation"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
 )
 
@@ -37,16 +38,19 @@ func main() {
 	organizationService := organization.NewService(organizationStore, auditRecorder)
 	matchingStore := matching.NewSQLStore(database)
 	matchingService := matching.NewService(matchingStore, auditRecorder, matching.NewRuleQuestionGenerator())
+	recommendationStore := recommendation.NewSQLStore(database)
+	recommendationService := recommendation.NewService(recommendationStore, auditRecorder)
 	server := app.NewServerWithOptions(app.Options{
-		AuthService:         authService,
-		IAMService:          iamService,
-		ResumeService:       resumeService,
-		OrganizationService: organizationService,
-		MatchingService:     matchingService,
-		FrontendOrigin:      cfg.FrontendOrigin,
-		RequireHTTPS:        cfg.Env == "production",
-		SecureCookies:       cfg.SecureCookies,
-		TrustForwardedProto: cfg.TrustForwardedProto,
+		AuthService:           authService,
+		IAMService:            iamService,
+		ResumeService:         resumeService,
+		OrganizationService:   organizationService,
+		MatchingService:       matchingService,
+		RecommendationService: recommendationService,
+		FrontendOrigin:        cfg.FrontendOrigin,
+		RequireHTTPS:          cfg.Env == "production",
+		SecureCookies:         cfg.SecureCookies,
+		TrustForwardedProto:   cfg.TrustForwardedProto,
 	})
 
 	if err := server.Echo.Start(cfg.APIAddr); err != nil {

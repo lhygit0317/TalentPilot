@@ -214,6 +214,40 @@ export interface paths {
         patch: operations["patch-position"];
         trace?: never;
     };
+    "/recommendations/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route a resume to matching departments */
+        post: operations["post-recommendation-route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recommendations/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a resume recommendation */
+        post: operations["post-recommendation-send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes": {
         parameters: {
             query?: never;
@@ -588,6 +622,37 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        RecommendationDepartmentContacts: {
+            hrbps: string[];
+            managers: string[];
+            trainees: string[];
+        };
+        RecommendationDepartmentSummary: {
+            id: string;
+            name: string;
+        };
+        RecommendationPositionSummary: {
+            chan: string;
+            id: string;
+            level: string;
+            name: string;
+        };
+        RecommendationResumeSummary: {
+            chan: string;
+            currentDepartment: components["schemas"]["RecommendationDepartmentSummary"];
+            id: string;
+            keywords: string[];
+            name: string;
+            pos: string;
+        };
+        RecommendationRouteBody: {
+            resumeId: string;
+        };
+        RecommendationSendBody: {
+            departmentId: string;
+            positionId: string;
+            resumeId: string;
+        };
         ResumeContext: {
             chan: string;
             currentDepartment: components["schemas"]["MatchingDepartmentSummary"];
@@ -606,6 +671,19 @@ export interface components {
             departmentName: string;
             roleLabel: string;
         };
+        RouteResult: {
+            /** Format: date-time */
+            createdAt: string;
+            resume: components["schemas"]["RecommendationResumeSummary"];
+            routes: components["schemas"]["RouteRow"][];
+        };
+        RouteRow: {
+            best: boolean;
+            contacts: components["schemas"]["RecommendationDepartmentContacts"];
+            department: components["schemas"]["RecommendationDepartmentSummary"];
+            position: components["schemas"]["RecommendationPositionSummary"];
+            score: components["schemas"]["Score"];
+        };
         Score: {
             /** Format: int64 */
             experience: number;
@@ -616,6 +694,18 @@ export interface components {
             skill: number;
             /** Format: int64 */
             total: number;
+        };
+        SendResult: {
+            candidateName: string;
+            department: components["schemas"]["RecommendationDepartmentSummary"];
+            message: string;
+            /** Format: int64 */
+            notifiedCount: number;
+            position: components["schemas"]["RecommendationPositionSummary"];
+            resumeId: string;
+            reusedExistingCopy: boolean;
+            selfNotificationRead: boolean;
+            sourceResumeId: string;
         };
         UserSummary: {
             employeeId: string;
@@ -1698,6 +1788,126 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "post-recommendation-route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationRouteBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RouteResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "post-recommendation-send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationSendBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
