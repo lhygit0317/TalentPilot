@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	ErrResumeNotFound         = errors.New("recommendation resume not found")
 	ErrRouteFailed            = errors.New("recommendation route failed")
 	ErrTargetPositionOffline  = errors.New("recommendation target position offline")
 	ErrTargetPositionMismatch = errors.New("recommendation target position mismatch")
