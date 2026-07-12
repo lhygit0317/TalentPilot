@@ -6,7 +6,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "lint": "eslint .",
+    "lint": "eslint . && node ./scripts/check-business-ui-elements.mjs",
     "test": "vitest",
     "test:e2e": "playwright test"
   },

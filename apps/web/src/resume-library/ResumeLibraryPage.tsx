@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { zhCN } from "../i18n/zh-CN";
 import type { NotificationJumpContext } from "../notifications/types";
 import { highlightLiteral } from "./highlight";
@@ -305,33 +306,33 @@ export function ResumeLibraryPage({ notificationJump = null, session }: ResumeLi
       ) : null}
 
       <div className="overflow-x-auto border border-white/10">
-        <table className="w-full min-w-[920px] border-collapse text-left text-sm">
-          <thead className="bg-white/[0.04] text-muted">
-            <tr>
+        <Table className="min-w-[920px]">
+          <TableHeader>
+            <TableRow>
               {columnLabels.map((label) => (
-                <th className="border-b border-white/10 px-3 py-3 font-medium" key={label} scope="col">
+                <TableHead key={label}>
                   {label}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.length > 0 ? (
               rows.map((resume) => (
-                <tr className="border-b border-white/10 last:border-0" key={resume.id}>
-                  <td className="px-3 py-3 font-medium">{highlightLiteral(resume.name, search)}</td>
-                  <td className="px-3 py-3">{formatOptionalNumber(resume.age)}</td>
-                  <td className="px-3 py-3">{resume.school || text.emptyValue}</td>
-                  <td className="px-3 py-3">{formatOptionalNumber(resume.yearsExp)}</td>
-                  <td className="px-3 py-3">
+                <TableRow key={resume.id}>
+                  <TableCell className="font-medium">{highlightLiteral(resume.name, search)}</TableCell>
+                  <TableCell>{formatOptionalNumber(resume.age)}</TableCell>
+                  <TableCell>{resume.school || text.emptyValue}</TableCell>
+                  <TableCell>{formatOptionalNumber(resume.yearsExp)}</TableCell>
+                  <TableCell>
                     <SplitText value={resume.currentDepartment.name || text.emptyValue} />
-                  </td>
-                  <td className="px-3 py-3">{highlightLiteral(resume.pos || text.emptyValue, search)}</td>
-                  <td className="px-3 py-3">{formatSource(resume)}</td>
-                  <td className="px-3 py-3">
+                  </TableCell>
+                  <TableCell>{highlightLiteral(resume.pos || text.emptyValue, search)}</TableCell>
+                  <TableCell>{formatSource(resume)}</TableCell>
+                  <TableCell>
                     <KeywordList keywords={resume.keywords} search={search} />
-                  </td>
-                  <td className="px-3 py-3">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-2">
                       {resume.canGet ? (
                         <Button onClick={() => void handleOpenDetail(resume.id)} type="button">
@@ -344,18 +345,18 @@ export function ResumeLibraryPage({ notificationJump = null, session }: ResumeLi
                         </Button>
                       ) : null}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td className="px-3 py-8 text-center text-muted" colSpan={columnLabels.length}>
+              <TableRow>
+                <TableCell className="py-8 text-center text-muted" colSpan={columnLabels.length}>
                   {emptyMessage}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {detail ? <ResumeDetailPanel detail={detail} /> : null}

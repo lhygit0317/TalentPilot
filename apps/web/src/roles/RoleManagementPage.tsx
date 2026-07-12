@@ -12,6 +12,7 @@ import { Button } from "../components/ui/button";
 import { Field, Form } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { zhCN } from "../i18n/zh-CN";
 import type {
   PermissionOptions,
@@ -265,9 +266,9 @@ export function RoleManagementPage({ session }: RoleManagementPageProps) {
       </Form>
 
       <div className="overflow-x-auto border border-white/10">
-        <table className="w-full min-w-[960px] border-collapse text-left text-sm">
-          <thead className="bg-white/[0.04] text-muted">
-            <tr>
+        <Table className="min-w-[960px]">
+          <TableHeader>
+            <TableRow>
               {[
                 text.columns.role,
                 text.columns.type,
@@ -278,38 +279,38 @@ export function RoleManagementPage({ session }: RoleManagementPageProps) {
                 text.columns.references,
                 text.columns.operations,
               ].map((label) => (
-                <th className="border-b border-white/10 px-3 py-3 font-medium" key={label} scope="col">
+                <TableHead key={label}>
                   {label}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {roles.length > 0 ? (
               roles.map((role) => (
-                <tr className="border-b border-white/10 last:border-0" key={role.id}>
-                  <td className="px-3 py-3">
+                <TableRow key={role.id}>
+                  <TableCell>
                     <div className="grid gap-1">
                       <span className="font-medium">{role.label}</span>
                       <span className="text-xs text-muted">{role.description || text.empty.value}</span>
                     </div>
-                  </td>
-                  <td className="px-3 py-3">
+                  </TableCell>
+                  <TableCell>
                     <Badge>{role.isSystem ? text.system.system : text.system.custom}</Badge>
-                  </td>
-                  <td className="px-3 py-3">{role.enabled ? text.status.enabled : text.status.disabled}</td>
-                  <td className="px-3 py-3">{role.permissionCount}</td>
-                  <td className="px-3 py-3">{role.childRoleCount}</td>
-                  <td className="px-3 py-3">{role.conditionSummary || text.empty.conditions}</td>
-                  <td className="px-3 py-3">
+                  </TableCell>
+                  <TableCell>{role.enabled ? text.status.enabled : text.status.disabled}</TableCell>
+                  <TableCell>{role.permissionCount}</TableCell>
+                  <TableCell>{role.childRoleCount}</TableCell>
+                  <TableCell>{role.conditionSummary || text.empty.conditions}</TableCell>
+                  <TableCell>
                     <div className="grid gap-1">
                       <span>{role.referenceCount}</span>
                       {!role.canDelete && role.referenceCount > 0 ? (
                         <span className="text-xs text-muted">{text.deleteBlocked(role.referenceCount)}</span>
                       ) : null}
                     </div>
-                  </td>
-                  <td className="px-3 py-3">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-2">
                       {role.canEdit ? (
                         <Button onClick={() => void openEditEditor(role)} type="button">
@@ -325,18 +326,18 @@ export function RoleManagementPage({ session }: RoleManagementPageProps) {
                         {text.actions.delete}
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td className="px-3 py-8 text-center text-muted" colSpan={8}>
+              <TableRow>
+                <TableCell className="py-8 text-center text-muted" colSpan={8}>
                   {text.empty.roles}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {pendingToggle ? (

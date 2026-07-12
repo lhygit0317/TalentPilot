@@ -54,7 +54,7 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 | Area | Item | Status | Evidence | Next |
 | --- | --- | --- | --- | --- |
-| Frontend | Component rule enforcement | In Progress | `docs/specs/010-quality-hardening.md` defines the hardening target; `docs/superpowers/plans/2026-07-12-quality-hardening-implementation.md` defines the implementation steps for automated raw interactive element checks. Existing convention is documented in `AGENTS.md` and `docs/specs/000-foundation-architecture.md`. | Execute the implementation plan starting with the failing checker fixture. |
+| Frontend | Component rule enforcement | Done | Raw interactive element checker implemented under `apps/web/scripts`; web lint now runs it. Business table usage migrated to `apps/web/src/components/ui/table.tsx` wrappers. Verification: `pnpm --filter @talentpilot/web lint`, `CI=true pnpm --filter @talentpilot/web test -- --run`. | Proceed to Playwright E2E smoke coverage. |
 | Testing | Playwright E2E smoke coverage | Not Started | `make test-e2e` exists but remains reserved; Playwright dependency/config is not installed yet. `docs/specs/010-quality-hardening.md` and `docs/superpowers/plans/2026-07-12-quality-hardening-implementation.md` define initial smoke coverage. | Execute the Playwright setup tasks after component-rule enforcement. |
 
 ## Current Recommended Order

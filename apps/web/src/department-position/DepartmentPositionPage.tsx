@@ -16,6 +16,7 @@ import { Button } from "../components/ui/button";
 import { Field, Form } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { zhCN } from "../i18n/zh-CN";
 import type { DepartmentDetail, DepartmentListItem, DepartmentPositionSession, PositionDetail, PositionListItem } from "./types";
 
@@ -428,25 +429,25 @@ function DepartmentTab({
         </Form>
       ) : null}
       <div className="overflow-x-auto border border-white/10">
-        <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-          <thead className="bg-white/[0.04] text-muted">
-            <tr>
+        <Table className="min-w-[760px]">
+          <TableHeader>
+            <TableRow>
               {[text.department.columns.name, text.department.columns.positionCount, text.department.columns.resumeCount, text.common.updatedAt, text.common.operations].map((label) => (
-                <th className="border-b border-white/10 px-3 py-3 font-medium" key={label} scope="col">
+                <TableHead key={label}>
                   {label}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {departments.length > 0 ? (
               departments.map((department) => (
-                <tr className="border-b border-white/10 last:border-0" key={department.id}>
-                  <td className="px-3 py-3 font-medium">{department.name}</td>
-                  <td className="px-3 py-3">{department.positionCount}</td>
-                  <td className="px-3 py-3">{department.resumeCount}</td>
-                  <td className="px-3 py-3">{formatDate(department.updatedAt)}</td>
-                  <td className="px-3 py-3">
+                <TableRow key={department.id}>
+                  <TableCell className="font-medium">{department.name}</TableCell>
+                  <TableCell>{department.positionCount}</TableCell>
+                  <TableCell>{department.resumeCount}</TableCell>
+                  <TableCell>{formatDate(department.updatedAt)}</TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-2">
                       {department.canGet ? (
                         <Button onClick={() => onOpen(department.id)} type="button">
@@ -464,18 +465,18 @@ function DepartmentTab({
                         </Button>
                       ) : null}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td className="px-3 py-8 text-center text-muted" colSpan={5}>
+              <TableRow>
+                <TableCell className="py-8 text-center text-muted" colSpan={5}>
                   {text.empty.departments}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {detail ? <DepartmentDetailPanel detail={detail} /> : null}
@@ -611,28 +612,28 @@ function PositionTab({
       )}
 
       <div className="overflow-x-auto border border-white/10">
-        <table className="w-full min-w-[980px] border-collapse text-left text-sm">
-          <thead className="bg-white/[0.04] text-muted">
-            <tr>
+        <Table className="min-w-[980px]">
+          <TableHeader>
+            <TableRow>
               {[text.position.columns.name, text.position.columns.department, text.position.columns.channel, text.position.columns.level, text.position.columns.status, text.position.columns.keywordCount, text.position.columns.implicitTagCount, text.common.operations].map((label) => (
-                <th className="border-b border-white/10 px-3 py-3 font-medium" key={label} scope="col">
+                <TableHead key={label}>
                   {label}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {positions.length > 0 ? (
               positions.map((position) => (
-                <tr className="border-b border-white/10 last:border-0" key={position.id}>
-                  <td className="px-3 py-3 font-medium">{position.name}</td>
-                  <td className="px-3 py-3">{position.department.name}</td>
-                  <td className="px-3 py-3">{channelLabels[position.chan] ?? position.chan}</td>
-                  <td className="px-3 py-3">{position.level || text.empty.value}</td>
-                  <td className="px-3 py-3">{statusLabels[position.status] ?? position.status}</td>
-                  <td className="px-3 py-3">{position.keywordCount}</td>
-                  <td className="px-3 py-3">{position.implicitTagCount}</td>
-                  <td className="px-3 py-3">
+                <TableRow key={position.id}>
+                  <TableCell className="font-medium">{position.name}</TableCell>
+                  <TableCell>{position.department.name}</TableCell>
+                  <TableCell>{channelLabels[position.chan] ?? position.chan}</TableCell>
+                  <TableCell>{position.level || text.empty.value}</TableCell>
+                  <TableCell>{statusLabels[position.status] ?? position.status}</TableCell>
+                  <TableCell>{position.keywordCount}</TableCell>
+                  <TableCell>{position.implicitTagCount}</TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-2">
                       {position.canGet ? (
                         <Button onClick={() => onOpen(position.id)} type="button">
@@ -655,18 +656,18 @@ function PositionTab({
                         </Button>
                       ) : null}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td className="px-3 py-8 text-center text-muted" colSpan={8}>
+              <TableRow>
+                <TableCell className="py-8 text-center text-muted" colSpan={8}>
                   {search.trim() ? text.empty.search : text.empty.positions}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {detail ? <PositionDetailPanel detail={detail} /> : null}
