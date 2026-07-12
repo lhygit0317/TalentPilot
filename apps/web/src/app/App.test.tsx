@@ -17,6 +17,8 @@ const apiMocks = vi.hoisted(() => ({
   loginWithW3: vi.fn(),
   logout: vi.fn(),
   parseResumeMatch: vi.fn(),
+  routeRecommendation: vi.fn(),
+  sendRecommendation: vi.fn(),
 }));
 
 vi.mock("../api/client", () => apiMocks);
@@ -141,6 +143,8 @@ describe("App", () => {
       error: undefined,
     });
     apiMocks.parseResumeMatch.mockReset();
+    apiMocks.routeRecommendation.mockReset();
+    apiMocks.sendRecommendation.mockReset();
     apiMocks.generateInterviewQuestions.mockReset();
     apiMocks.importResume.mockReset();
     apiMocks.getJob.mockReset();
@@ -324,6 +328,20 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "简历库" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "候选人" })).toBeInTheDocument();
+  });
+
+  it("renders the resume recommendation page when it is the active IAM route", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({
+      data: { ...hrbpSession, defaultRoute: "/resume-recommend" },
+      error: undefined,
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "简历推荐" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "智能分流" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /张三/ })).toBeInTheDocument();
+    expect(apiMocks.listResumes).toHaveBeenCalledWith({ chan: "social" });
   });
 
   it("renders the department position page when it is the active IAM route", async () => {

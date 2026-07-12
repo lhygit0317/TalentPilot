@@ -8,6 +8,7 @@ import { getCurrentUser, loginWithW3, logout } from "../api/client";
 import { DepartmentPositionPage } from "../department-position/DepartmentPositionPage";
 import { ResumeLibraryPage } from "../resume-library/ResumeLibraryPage";
 import { ResumeParsePage } from "../resume-parse/ResumeParsePage";
+import { ResumeRecommendPage } from "../resume-recommend/ResumeRecommendPage";
 import "../styles/globals.css";
 
 type SessionView = {
@@ -211,6 +212,8 @@ export function App() {
         ) : null}
         {activePage === "resume-parse" ? (
           <ResumeParsePage session={session} />
+        ) : activePage === "resume-recommend" ? (
+          <ResumeRecommendPage session={session} />
         ) : activePage === "resume-library" ? (
           <ResumeLibraryPage session={session} />
         ) : activePage === "departments-positions" ? (

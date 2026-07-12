@@ -178,6 +178,70 @@ export const enUS = {
       label: "Upload resume",
     },
   },
+  resumeRecommend: {
+    actions: {
+      route: "Smart route",
+      routing: "Thinking...",
+      send: "Recommend to",
+      sending: "Sending",
+    },
+    channelNavLabel: "Recommendation channel",
+    contacts: {
+      hrbps: "HRBP",
+      managers: "Manager",
+      trainees: "Trainee",
+    },
+    empty: {
+      resumes: "No selectable resumes in this channel. Import one.",
+    },
+    emptyValue: "Not parsed",
+    errors: {
+      codes: {
+        IAM_PERMISSION_DENIED: "You do not have permission to perform this action.",
+        JOB_ACCESS_DENIED: "You cannot view this import job.",
+        JOB_TIMEOUT: "The import job is still running. Refresh later.",
+        RECOMMENDATION_CHANNEL_MISMATCH: "The target position channel does not match the resume.",
+        RECOMMENDATION_ROUTE_FAILED: "Failed to route the resume. Try again later.",
+        RECOMMENDATION_SEND_FAILED: "Failed to send the recommendation. Try again later.",
+        RECOMMENDATION_TARGET_POSITION_MISMATCH: "The target position does not belong to the selected department.",
+        RECOMMENDATION_TARGET_POSITION_OFFLINE: "The target position is off-shelf and cannot receive recommendations.",
+        RESUME_IMPORT_FAILED: "Failed to import the resume. Try again later.",
+        RESUME_IMPORT_PARSE_FAILED: "Resume parsing failed. Upload the PDF again.",
+      },
+      fileTooLarge: "File must be 10MB or smaller",
+      generic: "Operation failed. Try again later.",
+      list: "Failed to load resumes. Try again later.",
+      targetDepartmentRequired: "Select an import target department",
+      unsupportedType: "Only PDF files are supported",
+    },
+    import: {
+      targetDepartmentLabel: "Import target department",
+      targetDepartmentPlaceholder: "Select department",
+    },
+    result: {
+      emptyDescription: "Select or import a resume, then start smart routing.",
+      emptyTitle: "Routing results will appear here",
+      experience: "Experience match",
+      implicit: "Implicit requirements",
+      noRoutesDescription: "Put positions on shelf in Departments and positions.",
+      noRoutesTitle: "No active positions in this channel",
+      skill: "Skill match",
+      thinking: "Thinking...",
+    },
+    selectedResume: (name: string) => `Selected: ${name}`,
+    source: {
+      library: "Choose from library",
+      upload: "Import new resume",
+    },
+    subtitle: "Select a candidate to review department routing and contacts.",
+    title: "Resume recommendation",
+    toasts: {
+      singleImported: (name: string) => `✓ Imported "${name}" into the resume library`,
+    },
+    upload: {
+      label: "Upload resume",
+    },
+  },
   departmentPosition: {
     actions: {
       cancel: "Cancel",

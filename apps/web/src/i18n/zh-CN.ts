@@ -178,6 +178,70 @@ export const zhCN = {
       label: "点击上传简历",
     },
   },
+  resumeRecommend: {
+    actions: {
+      route: "智能分流",
+      routing: "Thinking...",
+      send: "推荐到",
+      sending: "推荐中",
+    },
+    channelNavLabel: "推荐渠道",
+    contacts: {
+      hrbps: "HRBP",
+      managers: "主管",
+      trainees: "锻炼干部",
+    },
+    empty: {
+      resumes: "该渠道下暂无可选简历，请导入",
+    },
+    emptyValue: "未解析到",
+    errors: {
+      codes: {
+        IAM_PERMISSION_DENIED: "没有权限执行该操作。",
+        JOB_ACCESS_DENIED: "无权查看导入任务。",
+        JOB_TIMEOUT: "导入任务仍在处理中，请稍后刷新。",
+        RECOMMENDATION_CHANNEL_MISMATCH: "目标岗位与简历渠道不一致。",
+        RECOMMENDATION_ROUTE_FAILED: "智能分流失败，请稍后重试。",
+        RECOMMENDATION_SEND_FAILED: "推荐发送失败，请稍后重试。",
+        RECOMMENDATION_TARGET_POSITION_MISMATCH: "目标岗位不属于所选部门。",
+        RECOMMENDATION_TARGET_POSITION_OFFLINE: "目标岗位已下架，不能推荐。",
+        RESUME_IMPORT_FAILED: "简历导入失败，请稍后重试。",
+        RESUME_IMPORT_PARSE_FAILED: "简历解析失败，请重新上传 PDF。",
+      },
+      fileTooLarge: "文件不能超过 10MB",
+      generic: "操作失败，请稍后重试。",
+      list: "简历列表加载失败，请稍后重试。",
+      targetDepartmentRequired: "请选择导入目标部门",
+      unsupportedType: "仅支持 PDF 文件",
+    },
+    import: {
+      targetDepartmentLabel: "导入目标部门",
+      targetDepartmentPlaceholder: "请选择部门",
+    },
+    result: {
+      emptyDescription: "选择/导入简历后点击「智能分流」",
+      emptyTitle: "分流结果将显示在这里",
+      experience: "经验匹配",
+      implicit: "隐性要求",
+      noRoutesDescription: "请在「部门与岗位管理」中上架岗位",
+      noRoutesTitle: "该渠道下暂无在架岗位",
+      skill: "技能匹配",
+      thinking: "Thinking...",
+    },
+    selectedResume: (name: string) => `已选择: ${name}`,
+    source: {
+      library: "从简历库选择",
+      upload: "导入新简历",
+    },
+    subtitle: "选择候选人，按部门查看可推荐岗位和联系人。",
+    title: "简历推荐",
+    toasts: {
+      singleImported: (name: string) => `✓ 已导入「${name}」并加入简历库`,
+    },
+    upload: {
+      label: "点击上传简历",
+    },
+  },
   departmentPosition: {
     actions: {
       cancel: "取消",
