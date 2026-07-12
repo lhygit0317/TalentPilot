@@ -188,4 +188,27 @@ describe("api client", () => {
       params: { path: { userId: "user_a", bindingId: "udr_1" } },
     });
   });
+
+  it("reads and acknowledges notifications", async () => {
+    const get = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    vi.doMock("@talentpilot/api-client", () => ({
+      createTalentPilotClient: vi.fn(() => ({ GET: get, POST: post })),
+    }));
+
+    const { getNotificationSummary, listNotifications, markAllNotificationsRead, markNotificationRead } = await import(
+      "./client"
+    );
+    await getNotificationSummary();
+    await listNotifications({ limit: 20 });
+    await markAllNotificationsRead();
+    await markNotificationRead("notification_1");
+
+    expect(get).toHaveBeenCalledWith("/notifications/summary");
+    expect(get).toHaveBeenCalledWith("/notifications", { params: { query: { limit: 20 } } });
+    expect(post).toHaveBeenCalledWith("/notifications/read-all");
+    expect(post).toHaveBeenCalledWith("/notifications/{notificationId}/read", {
+      params: { path: { notificationId: "notification_1" } },
+    });
+  });
 });

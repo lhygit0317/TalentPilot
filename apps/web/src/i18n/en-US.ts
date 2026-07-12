@@ -103,6 +103,11 @@ export const enUS = {
       targetDepartmentLabel: "Import target department",
       targetDepartmentPlaceholder: "Select department",
     },
+    notificationJump: {
+      item: (candidateName: string, departmentName: string, recommenderName: string) =>
+        `${candidateName} · ${departmentName} · ${recommenderName}`,
+      title: (count: number) => `${count} resumes were recommended to departments you can view`,
+    },
     noDataScope: "No department scope",
     searchLabel: "Search",
     searchPlaceholder: "Search name, position, or keyword",
@@ -412,5 +417,13 @@ export const enUS = {
       assigned: "Role bindings assigned",
       deleted: "Role binding removed",
     },
+  },
+  notifications: {
+    buttonLabel: "Recommendation alerts",
+    empty: "No new recommendation alerts",
+    markAll: "Mark all read",
+    markAllDone: "All marked as read",
+    rowTitle: (candidateName: string, departmentName: string) => `${candidateName} was recommended to "${departmentName}"`,
+    title: (count: number) => `Recommendation alerts (${count} unread)`,
   },
 } as const;

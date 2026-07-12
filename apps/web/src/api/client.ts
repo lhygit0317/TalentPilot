@@ -133,6 +133,22 @@ export function deleteUserRoleBinding(userId: string, bindingId: string) {
   });
 }
 
+export function getNotificationSummary() {
+  return apiClient.GET("/notifications/summary");
+}
+
+export function listNotifications(query: { limit?: number; cursor?: string } = {}) {
+  return apiClient.GET("/notifications", { params: { query } });
+}
+
+export function markAllNotificationsRead() {
+  return apiClient.POST("/notifications/read-all");
+}
+
+export function markNotificationRead(notificationId: string) {
+  return apiClient.POST("/notifications/{notificationId}/read", { params: { path: { notificationId } } });
+}
+
 export async function loginWithW3(account: string, password: string) {
   await apiClient.GET("/auth/csrf");
 

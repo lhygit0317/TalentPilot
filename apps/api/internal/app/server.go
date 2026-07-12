@@ -13,6 +13,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/http/apperror"
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
 	"github.com/talentpilot/talentpilot/apps/api/internal/matching"
+	"github.com/talentpilot/talentpilot/apps/api/internal/notification"
 	"github.com/talentpilot/talentpilot/apps/api/internal/organization"
 	"github.com/talentpilot/talentpilot/apps/api/internal/recommendation"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
@@ -36,6 +37,7 @@ type Options struct {
 	MatchingService       MatchingService
 	RecommendationService RecommendationService
 	UserAdminService      UserAdminService
+	NotificationService   NotificationService
 }
 
 type AuthService interface {
@@ -92,6 +94,13 @@ type UserAdminService interface {
 	DeleteRoleBinding(context.Context, useradmin.DeleteRoleBindingInput) (useradmin.DeleteRoleBindingResult, error)
 }
 
+type NotificationService interface {
+	Summary(context.Context, string) (notification.SummaryResult, error)
+	ListUnread(context.Context, notification.ListQuery) (notification.ListResult, error)
+	MarkAllRead(context.Context, string) (notification.ReadAllResult, error)
+	MarkRead(context.Context, notification.MarkReadInput) (notification.MarkReadResult, error)
+}
+
 type healthOutput struct {
 	Body struct {
 		Status string `json:"status" example:"ok"`
@@ -123,6 +132,7 @@ func NewServerWithOptions(options Options) *Server {
 	registerMatchingRoutes(api, options)
 	registerRecommendationRoutes(api, options)
 	registerUserAdminRoutes(api, options)
+	registerNotificationRoutes(api, options)
 
 	return &Server{Echo: e, API: api}
 }

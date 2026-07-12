@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
@@ -14,13 +14,17 @@ const apiMocks = vi.hoisted(() => ({
   assignUserRoleBindings: vi.fn(),
   deleteUserRoleBinding: vi.fn(),
   getUser: vi.fn(),
+  getNotificationSummary: vi.fn(),
   listAssignableRoles: vi.fn(),
   listDepartments: vi.fn(),
+  listNotifications: vi.fn(),
   listPositions: vi.fn(),
   listResumes: vi.fn(),
   listUsers: vi.fn(),
   loginWithW3: vi.fn(),
   logout: vi.fn(),
+  markAllNotificationsRead: vi.fn(),
+  markNotificationRead: vi.fn(),
   parseResumeMatch: vi.fn(),
   routeRecommendation: vi.fn(),
   sendRecommendation: vi.fn(),
@@ -72,6 +76,11 @@ const userAdminSession = {
   defaultRoute: "/users",
   pageAccess: ["users"],
   permissions: ["User.List", "User.Get", "UserDepartmentRole.List", "UserDepartmentRole.Create", "UserDepartmentRole.Delete"],
+};
+
+const notificationSession = {
+  ...hrbpSession,
+  permissions: [...hrbpSession.permissions, "Notification.List", "Notification.Get", "Notification.Update"],
 };
 
 async function renderLoginApp() {
@@ -186,8 +195,52 @@ describe("App", () => {
     });
     apiMocks.importResume.mockReset();
     apiMocks.getJob.mockReset();
+    apiMocks.getNotificationSummary.mockReset();
+    apiMocks.getNotificationSummary.mockResolvedValue({ data: { unreadCount: 2 }, error: undefined });
+    apiMocks.listNotifications.mockReset();
+    apiMocks.listNotifications.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: "notification_1",
+            resumeId: "resume_1",
+            candidateName: "张三",
+            department: { id: "dept_a", name: "智算调度部" },
+            recommender: { id: "user_1", name: "李四" },
+            chan: "social",
+            createdAt: "2026-07-12T08:00:00Z",
+            read: false,
+            canOpenResumeLibrary: true,
+          },
+        ],
+        unreadCount: 2,
+        nextCursor: "",
+      },
+      error: undefined,
+    });
+    apiMocks.markAllNotificationsRead.mockReset();
+    apiMocks.markAllNotificationsRead.mockResolvedValue({ data: { updatedCount: 2, unreadCount: 0 }, error: undefined });
+    apiMocks.markNotificationRead.mockReset();
+    apiMocks.markNotificationRead.mockResolvedValue({
+      data: {
+        notification: {
+          id: "notification_1",
+          resumeId: "resume_1",
+          candidateName: "张三",
+          department: { id: "dept_a", name: "智算调度部" },
+          recommender: { id: "user_1", name: "李四" },
+          chan: "social",
+          createdAt: "2026-07-12T08:00:00Z",
+          read: true,
+          canOpenResumeLibrary: true,
+        },
+        unreadCount: 1,
+      },
+      error: undefined,
+    });
     apiMocks.loginWithW3.mockReset();
     apiMocks.logout.mockReset();
+    window.location.hash = "";
   });
 
   it("renders the company account login form for unauthenticated users", async () => {
@@ -317,6 +370,38 @@ describe("App", () => {
     expect(screen.getByRole("link", { name: "部门与岗位" })).toBeInTheDocument();
   });
 
+  it("shows notification badges only for users with Notification.List", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({ data: notificationSession, error: undefined });
+
+    render(<App />);
+
+    expect(await screen.findByRole("button", { name: "推荐提醒" })).toBeInTheDocument();
+    await waitFor(() => expect(apiMocks.getNotificationSummary).toHaveBeenCalled());
+    expect((await screen.findAllByText("2")).length).toBeGreaterThanOrEqual(2);
+
+    cleanup();
+    apiMocks.getCurrentUser.mockResolvedValue({ data: hrbpSession, error: undefined });
+    render(<App />);
+
+    expect(await screen.findByRole("link", { name: "简历库" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "推荐提醒" })).not.toBeInTheDocument();
+  });
+
+  it("marks a notification read and jumps into the resume library", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({ data: notificationSession, error: undefined });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "推荐提醒" }));
+    await user.click(await screen.findByRole("button", { name: /张三 被推荐到/ }));
+
+    expect(apiMocks.markNotificationRead).toHaveBeenCalledWith("notification_1");
+    expect(await screen.findByRole("heading", { name: "简历库" })).toBeInTheDocument();
+    expect(apiMocks.listResumes).toHaveBeenCalledWith({ chan: "social", search: "张三" });
+    expect(await screen.findByText("有 1 份简历被推荐到你可查看的部门")).toBeInTheDocument();
+  });
+
   it("renders the resume parse workspace when it is the active IAM route", async () => {
     apiMocks.getCurrentUser.mockResolvedValue({ data: hrbpSession, error: undefined });
 
@@ -403,7 +488,7 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "用户管理" })).toBeInTheDocument();
     expect(apiMocks.listUsers).toHaveBeenCalledWith({});
-    expect(screen.getByRole("row", { name: /张敏/ })).toBeInTheDocument();
+    expect(await screen.findByRole("row", { name: /张敏/ })).toBeInTheDocument();
   });
 
   it("returns to the login form after logout", async () => {

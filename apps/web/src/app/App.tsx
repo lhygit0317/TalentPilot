@@ -6,6 +6,8 @@ import { NavLink } from "../components/ui/nav-link";
 import { zhCN } from "../i18n/zh-CN";
 import { getCurrentUser, loginWithW3, logout } from "../api/client";
 import { DepartmentPositionPage } from "../department-position/DepartmentPositionPage";
+import { NotificationBell } from "../notifications/NotificationBell";
+import type { NotificationJumpContext } from "../notifications/types";
 import { ResumeLibraryPage } from "../resume-library/ResumeLibraryPage";
 import { ResumeParsePage } from "../resume-parse/ResumeParsePage";
 import { ResumeRecommendPage } from "../resume-recommend/ResumeRecommendPage";
@@ -59,6 +61,9 @@ export function App() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const [activePage, setActivePage] = React.useState("");
+  const [notificationJump, setNotificationJump] = React.useState<NotificationJumpContext | null>(null);
+  const [unreadCount, setUnreadCount] = React.useState(0);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -97,6 +102,7 @@ export function App() {
         return;
       }
       setSession(data);
+      setActivePage(resolveInitialPage(data));
       setSuccessMessage(`${text.login.successPrefix} · ${data.roleLabels.join("、")}`);
       setAccount("");
       setPassword("");
@@ -110,9 +116,33 @@ export function App() {
   async function handleLogout() {
     await logout();
     setSession(null);
+    setActivePage("");
+    setNotificationJump(null);
+    setUnreadCount(0);
     setSuccessMessage(null);
     setPassword("");
   }
+
+  React.useEffect(() => {
+    if (!session) {
+      return;
+    }
+    const currentSession = session;
+    setActivePage(resolveInitialPage(currentSession));
+
+    function handleHashChange() {
+      const nextPage = resolveHashPage(currentSession);
+      if (nextPage) {
+        setActivePage(nextPage);
+        if (nextPage !== "resume-library") {
+          setNotificationJump(null);
+        }
+      }
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [session]);
 
   if (isCheckingSession) {
     return (
@@ -169,23 +199,51 @@ export function App() {
   }
 
   const links = session.pageAccess
-    .map((page) => ({ href: `#${page}`, label: routeLabels[page] }))
-    .filter((link): link is { href: string; label: string } => Boolean(link.label));
-  const activePage = session.defaultRoute.replace(/^\//, "");
+    .map((page) => ({ href: `#${page}`, label: routeLabels[page], page }))
+    .filter((link): link is { href: string; label: string; page: string } => Boolean(link.label));
+  const selectedPage = activePage || session.defaultRoute.replace(/^\//, "");
   const departmentScope = formatDepartmentScope(session.dataScope);
   const channelScope = formatChannelScope(session.dataScope.channels);
+  const canListNotifications = hasPermission(session.permissions, "Notification.List");
+  const canUpdateNotifications = hasPermission(session.permissions, "Notification.Update");
+
+  function handleOpenResumeFromNotification(jump: NotificationJumpContext) {
+    setNotificationJump(jump);
+    setActivePage("resume-library");
+    window.location.hash = "resume-library";
+  }
+
+  function handleNavClick(page: string) {
+    setActivePage(page);
+    if (page !== "resume-library") {
+      setNotificationJump(null);
+    }
+  }
 
   return (
     <main aria-label={text.workspace.mainLabel} className="min-h-screen bg-bg text-fg">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-6 py-4">
         <nav aria-label={text.workspace.navLabel} className="flex flex-wrap gap-2">
           {links.map((link) => (
-            <NavLink active={link.href === `#${activePage}`} href={link.href} key={link.href}>
+            <NavLink active={link.page === selectedPage} href={link.href} key={link.href} onClick={() => handleNavClick(link.page)}>
               {link.label}
+              {link.page === "resume-library" && unreadCount > 0 ? (
+                <span aria-hidden="true" className="ml-2 min-w-5 border border-red-300 bg-red-500 px-1 text-center text-xs font-semibold text-white">
+                  {unreadCount}
+                </span>
+              ) : null}
             </NavLink>
           ))}
         </nav>
         <div className="flex flex-wrap items-center gap-4 text-sm">
+          {canListNotifications ? (
+            <NotificationBell
+              canUpdate={canUpdateNotifications}
+              onOpenResume={handleOpenResumeFromNotification}
+              onUnreadCountChange={setUnreadCount}
+              unreadCount={unreadCount}
+            />
+          ) : null}
           <div className="grid gap-1 text-right">
             <span className="font-medium">{session.user.name}</span>
             <span className="text-muted">{session.user.employeeId}</span>
@@ -211,18 +269,18 @@ export function App() {
             {successMessage}
           </p>
         ) : null}
-        {activePage === "resume-parse" ? (
+        {selectedPage === "resume-parse" ? (
           <ResumeParsePage session={session} />
-        ) : activePage === "resume-recommend" ? (
+        ) : selectedPage === "resume-recommend" ? (
           <ResumeRecommendPage session={session} />
-        ) : activePage === "resume-library" ? (
-          <ResumeLibraryPage session={session} />
-        ) : activePage === "departments-positions" ? (
+        ) : selectedPage === "resume-library" ? (
+          <ResumeLibraryPage notificationJump={notificationJump} session={session} />
+        ) : selectedPage === "departments-positions" ? (
           <DepartmentPositionPage session={session} />
-        ) : activePage === "users" ? (
+        ) : selectedPage === "users" ? (
           <UsersPage session={session} />
         ) : (
-          <h1 className="text-2xl font-semibold tracking-normal">{routeLabels[activePage] ?? text.nav.resumeParse}</h1>
+          <h1 className="text-2xl font-semibold tracking-normal">{routeLabels[selectedPage] ?? text.nav.resumeParse}</h1>
         )}
       </section>
     </main>
@@ -244,4 +302,20 @@ function formatChannelScope(channels: string[]) {
     return zhCN.session.workspace.noChannelScope;
   }
   return channels.map((channel) => channelLabels[channel] ?? channel).join("、");
+}
+
+function hasPermission(permissions: string[], permission: string) {
+  return permissions.includes(permission);
+}
+
+function resolveInitialPage(session: SessionView) {
+  return resolveHashPage(session) || session.defaultRoute.replace(/^\//, "");
+}
+
+function resolveHashPage(session: SessionView) {
+  const hashPage = window.location.hash.replace(/^#/, "");
+  if (!hashPage) {
+    return "";
+  }
+  return session.pageAccess.includes(hashPage) ? hashPage : "";
 }

@@ -116,6 +116,29 @@ describe("ResumeLibraryPage", () => {
     expect(screen.getByText("算力训练平台部")).toBeInTheDocument();
   });
 
+  it("applies notification jump context to channel search and banner", async () => {
+    render(
+      <ResumeLibraryPage
+        notificationJump={{
+          items: [
+            {
+              chan: "social",
+              resumeId: "resume_1",
+              candidateName: "张三",
+              department: { id: "dept_a", name: "智算调度部" },
+              recommender: { id: "user_1", name: "李四" },
+            },
+          ],
+        }}
+        session={session}
+      />,
+    );
+
+    expect(apiMocks.listResumes).toHaveBeenCalledWith({ chan: "social", search: "张三" });
+    expect(await screen.findByText("有 1 份简历被推荐到你可查看的部门")).toBeInTheDocument();
+    expect(screen.getByText("张三 · 智算调度部 · 李四")).toBeInTheDocument();
+  });
+
   it("renders table columns without an avatar", async () => {
     render(<ResumeLibraryPage session={session} />);
 

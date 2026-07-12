@@ -103,6 +103,11 @@ export const zhCN = {
       targetDepartmentLabel: "导入目标部门",
       targetDepartmentPlaceholder: "请选择部门",
     },
+    notificationJump: {
+      item: (candidateName: string, departmentName: string, recommenderName: string) =>
+        `${candidateName} · ${departmentName} · ${recommenderName}`,
+      title: (count: number) => `有 ${count} 份简历被推荐到你可查看的部门`,
+    },
     noDataScope: "暂无部门范围",
     searchLabel: "搜索",
     searchPlaceholder: "搜索姓名、岗位或关键词",
@@ -412,5 +417,13 @@ export const zhCN = {
       assigned: "已分配角色绑定",
       deleted: "已解除角色绑定",
     },
+  },
+  notifications: {
+    buttonLabel: "推荐提醒",
+    empty: "暂无新的推荐提醒",
+    markAll: "全部已读",
+    markAllDone: "已全部标记为已读",
+    rowTitle: (candidateName: string, departmentName: string) => `${candidateName} 被推荐到「${departmentName}」`,
+    title: (count: number) => `推荐提醒(${count} 条未读)`,
   },
 } as const;

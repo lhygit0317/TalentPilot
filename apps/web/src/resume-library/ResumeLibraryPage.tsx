@@ -5,6 +5,7 @@ import { Field } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
 import { zhCN } from "../i18n/zh-CN";
+import type { NotificationJumpContext } from "../notifications/types";
 import { highlightLiteral } from "./highlight";
 import type {
   JobStatus,
@@ -37,17 +38,27 @@ const columnLabels = [
 const maxImportBytes = 10 * 1024 * 1024;
 
 type ResumeLibraryPageProps = {
+  notificationJump?: NotificationJumpContext | null;
   session: ResumeLibrarySession;
 };
 
-export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
-  const [channel, setChannel] = React.useState<ResumeChannel>(() => preferredChannel(session.dataScope.channels));
-  const [search, setSearch] = React.useState("");
+export function ResumeLibraryPage({ notificationJump = null, session }: ResumeLibraryPageProps) {
+  const [channel, setChannel] = React.useState<ResumeChannel>(() => notificationJump?.items[0]?.chan ?? preferredChannel(session.dataScope.channels));
+  const [search, setSearch] = React.useState(() => notificationJump?.items[0]?.candidateName ?? "");
   const [list, setList] = React.useState<ResumeListResponse | null>(null);
   const [detail, setDetail] = React.useState<ResumeDetail | null>(null);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [successMessage, setSuccessMessage] = React.useState("");
   const [targetDepartmentId, setTargetDepartmentId] = React.useState("");
+
+  React.useEffect(() => {
+    const first = notificationJump?.items[0];
+    if (!first) {
+      return;
+    }
+    setChannel(first.chan);
+    setSearch(first.candidateName);
+  }, [notificationJump]);
 
   const loadResumes = React.useCallback(
     async (isCurrent: () => boolean = () => true) => {
@@ -279,6 +290,18 @@ export function ResumeLibraryPage({ session }: ResumeLibraryPageProps) {
         <p className="border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-accent" role="status">
           {successMessage}
         </p>
+      ) : null}
+      {notificationJump && notificationJump.items.length > 0 ? (
+        <div className="grid gap-2 border border-emerald-300/40 bg-emerald-400/10 px-3 py-3 text-sm">
+          <p className="font-medium text-emerald-100">{text.notificationJump.title(notificationJump.items.length)}</p>
+          <div className="flex flex-wrap gap-2 text-emerald-50">
+            {notificationJump.items.map((item) => (
+              <span className="border border-emerald-300/30 bg-emerald-300/10 px-2 py-1" key={`${item.resumeId}-${item.department.id}`}>
+                {text.notificationJump.item(item.candidateName, item.department.name, item.recommender.name)}
+              </span>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       <div className="overflow-x-auto border border-white/10">

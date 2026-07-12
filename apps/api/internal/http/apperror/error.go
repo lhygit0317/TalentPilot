@@ -60,6 +60,10 @@ const (
 	UserRoleBindingGuestProtected        Code = "USER_ROLE_BINDING_GUEST_PROTECTED"
 	UserRoleBindingSelfLockout           Code = "USER_ROLE_BINDING_SELF_LOCKOUT"
 	UserRoleBindingRoleDisabled          Code = "USER_ROLE_BINDING_ROLE_DISABLED"
+	NotificationAccessDenied             Code = "NOTIFICATION_ACCESS_DENIED"
+	NotificationNotFound                 Code = "NOTIFICATION_NOT_FOUND"
+	NotificationListFailed               Code = "NOTIFICATION_LIST_FAILED"
+	NotificationUpdateFailed             Code = "NOTIFICATION_UPDATE_FAILED"
 	RecommendationRouteFailed            Code = "RECOMMENDATION_ROUTE_FAILED"
 	RecommendationTargetPositionOffline  Code = "RECOMMENDATION_TARGET_POSITION_OFFLINE"
 	RecommendationTargetPositionMismatch Code = "RECOMMENDATION_TARGET_POSITION_MISMATCH"
@@ -166,9 +170,9 @@ func statusForCode(code Code) int {
 		return http.StatusServiceUnavailable
 	case AuthW3Timeout:
 		return http.StatusGatewayTimeout
-	case PermissionDenied, ResumeDeleteDenied, JobAccessDenied:
+	case PermissionDenied, ResumeDeleteDenied, JobAccessDenied, NotificationAccessDenied:
 		return http.StatusForbidden
-	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound, UserNotFound, UserRoleBindingNotFound:
+	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound, UserNotFound, UserRoleBindingNotFound, NotificationNotFound:
 		return http.StatusNotFound
 	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, UserRoleBindingDuplicate, UserRoleBindingBatchEmpty, UserRoleBindingBatchTooLarge, UserRoleBindingGuestProtected, UserRoleBindingSelfLockout, UserRoleBindingRoleDisabled, RecommendationTargetPositionOffline, RecommendationTargetPositionMismatch, RecommendationChannelMismatch, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
 		return http.StatusUnprocessableEntity
@@ -281,6 +285,14 @@ func defaultMessage(code Code) string {
 		return "不能解除自己的最后一个业务角色"
 	case UserRoleBindingRoleDisabled:
 		return "该角色已禁用，不能分配"
+	case NotificationAccessDenied:
+		return "没有通知权限"
+	case NotificationNotFound:
+		return "通知不存在"
+	case NotificationListFailed:
+		return "通知列表加载失败，请稍后重试"
+	case NotificationUpdateFailed:
+		return "通知状态更新失败，请稍后重试"
 	case RecommendationRouteFailed:
 		return "智能分流失败，请稍后重试"
 	case RecommendationTargetPositionOffline:

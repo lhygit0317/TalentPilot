@@ -114,6 +114,23 @@ func TestResumeImportJobMigrationAddsOwnershipAndResultMetadata(t *testing.T) {
 	assertColumnExists(t, database, "jobs", "result_json")
 }
 
+func TestE7NotificationPermissionMigrationDownRemovesOnlyE7Grants(t *testing.T) {
+	ctx := context.Background()
+	database := openSQLite(t)
+	provider := newMigrationProvider(t, database)
+
+	if _, err := provider.Up(ctx); err != nil {
+		t.Fatalf("goose up: %v", err)
+	}
+	if _, err := provider.DownTo(ctx, 6); err != nil {
+		t.Fatalf("goose down to before E7 grants: %v", err)
+	}
+
+	assertCount(t, database, "permissions", "role_id = '__role_manager__' AND resource = 'Notification' AND action IN ('List','Get','Update')", 0)
+	assertCount(t, database, "permissions", "role_id = '__role_manager__' AND resource = 'Notification' AND action = 'Create'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_trainee__' AND resource = 'Notification' AND action IN ('List','Get','Update')", 0)
+}
+
 func openSQLite(t *testing.T) *sql.DB {
 	t.Helper()
 
@@ -217,6 +234,12 @@ func assertPresetIAMSeeded(t *testing.T, database *sql.DB) {
 	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Department' AND action = 'Update'", 1)
 	assertCount(t, database, "permissions", "role_id = '__role_super_admin__' AND resource = 'Department' AND action = 'Delete'", 1)
 	assertCount(t, database, "permissions", "role_id != '__role_super_admin__' AND resource = 'Department' AND action IN ('Create','Update','Delete')", 0)
+	assertCount(t, database, "permissions", "role_id = '__role_manager__' AND resource = 'Notification' AND action = 'List'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_manager__' AND resource = 'Notification' AND action = 'Get'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_manager__' AND resource = 'Notification' AND action = 'Update'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_trainee__' AND resource = 'Notification' AND action = 'List'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_trainee__' AND resource = 'Notification' AND action = 'Get'", 1)
+	assertCount(t, database, "permissions", "role_id = '__role_trainee__' AND resource = 'Notification' AND action = 'Update'", 1)
 }
 
 func assertAuthSessionConstraints(t *testing.T, database *sql.DB) {
