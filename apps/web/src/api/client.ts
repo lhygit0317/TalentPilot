@@ -133,6 +133,62 @@ export function deleteUserRoleBinding(userId: string, bindingId: string) {
   });
 }
 
+export type RolePermissionMutation = {
+  resource: string;
+  action: string;
+  attributeConditions?: {
+    chan?: Array<"social" | "campus">;
+    expired?: boolean[];
+    self?: boolean;
+  };
+};
+
+export type RoleDefinitionMutation = {
+  label: string;
+  description?: string;
+  enabled: boolean;
+  permissions: RolePermissionMutation[];
+  childRoleIds: string[];
+};
+
+export function listRoles(
+  query: { search?: string; system?: boolean; enabled?: boolean; limit?: number } = {},
+) {
+  return apiClient.GET("/roles", {
+    params: {
+      query: {
+        ...query,
+        system: booleanQuery(query.system),
+        enabled: booleanQuery(query.enabled),
+      },
+    },
+  });
+}
+
+export function getRole(roleId: string) {
+  return apiClient.GET("/roles/{roleId}", { params: { path: { roleId } } });
+}
+
+export function getRolePermissionOptions() {
+  return apiClient.GET("/roles/permission-options");
+}
+
+export function createRoleDefinition(body: RoleDefinitionMutation) {
+  return apiClient.POST("/roles", { body });
+}
+
+export function updateRoleDefinition(roleId: string, body: RoleDefinitionMutation) {
+  return apiClient.PATCH("/roles/{roleId}", { params: { path: { roleId } }, body });
+}
+
+export function toggleRoleEnabled(roleId: string, enabled: boolean) {
+  return apiClient.PATCH("/roles/{roleId}/enabled", { params: { path: { roleId } }, body: { enabled } });
+}
+
+export function deleteRoleDefinition(roleId: string) {
+  return apiClient.DELETE("/roles/{roleId}", { params: { path: { roleId } } });
+}
+
 export function getNotificationSummary() {
   return apiClient.GET("/notifications/summary");
 }
@@ -169,4 +225,11 @@ function readCookie(name: string) {
   const match = document.cookie.split("; ").find((item) => item.startsWith(prefix));
 
   return match ? decodeURIComponent(match.slice(prefix.length)) : "";
+}
+
+function booleanQuery(value: boolean | undefined): "true" | "false" | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return value ? "true" : "false";
 }

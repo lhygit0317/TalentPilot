@@ -189,6 +189,62 @@ describe("api client", () => {
     });
   });
 
+  it("manages role definitions", async () => {
+    const del = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const get = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const patch = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    vi.doMock("@talentpilot/api-client", () => ({
+      createTalentPilotClient: vi.fn(() => ({ DELETE: del, GET: get, PATCH: patch, POST: post })),
+    }));
+    const payload = {
+      label: "高级评审者",
+      description: "查看社招简历",
+      enabled: true,
+      permissions: [
+        {
+          resource: "Resume" as const,
+          action: "List" as const,
+          attributeConditions: { chan: ["social" as const], expired: [false] },
+        },
+      ],
+      childRoleIds: ["__role_trainee__"],
+    };
+
+    const {
+      createRoleDefinition,
+      deleteRoleDefinition,
+      getRole,
+      getRolePermissionOptions,
+      listRoles,
+      toggleRoleEnabled,
+      updateRoleDefinition,
+    } = await import("./client");
+    await listRoles({ search: "HR", system: true, enabled: true });
+    await getRole("role_1");
+    await getRolePermissionOptions();
+    await createRoleDefinition(payload);
+    await updateRoleDefinition("role_1", payload);
+    await toggleRoleEnabled("role_1", false);
+    await deleteRoleDefinition("role_1");
+
+    expect(get).toHaveBeenCalledWith("/roles", {
+      params: { query: { search: "HR", system: "true", enabled: "true" } },
+    });
+    expect(get).toHaveBeenCalledWith("/roles/{roleId}", { params: { path: { roleId: "role_1" } } });
+    expect(get).toHaveBeenCalledWith("/roles/permission-options");
+    expect(post).toHaveBeenCalledWith("/roles", { body: payload });
+    expect(patch).toHaveBeenCalledWith("/roles/{roleId}", {
+      params: { path: { roleId: "role_1" } },
+      body: payload,
+    });
+    expect(patch).toHaveBeenCalledWith("/roles/{roleId}/enabled", {
+      params: { path: { roleId: "role_1" } },
+      body: { enabled: false },
+    });
+    expect(del).toHaveBeenCalledWith("/roles/{roleId}", { params: { path: { roleId: "role_1" } } });
+  });
+
   it("reads and acknowledges notifications", async () => {
     const get = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
     const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
