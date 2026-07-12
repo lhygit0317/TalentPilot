@@ -8,6 +8,8 @@ coverage/
 *.log
 .turbo/
 .vite/
+apps/web/test-results/
+apps/web/playwright-report/
 apps/api/bin/
 apps/api/tmp/
 apps/api/*.db

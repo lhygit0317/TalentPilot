@@ -101,7 +101,7 @@ Implemented command surface:
 - `make test`: run backend and frontend tests.
 - `make test-api`: run `go test ./...` in `apps/api`; migration tests also exercise PostgreSQL when `DATABASE_URL` is set. Requires Go.
 - `make test-web`: run Vitest for `apps/web`. Requires pnpm dependencies.
-- `make test-e2e`: reserved for future Playwright coverage; Playwright dependency/config is not installed yet and this command is not part of current passing gates.
+- `make test-e2e`: run Playwright smoke coverage for the web app. Requires pnpm dependencies and installed Playwright Chromium browser; GitHub Actions installs it before running the command.
 - `make lint`: run pnpm lint plus `go vet ./...`. Requires pnpm dependencies and Go.
 - `make typecheck`: run TypeScript type checks.
 - `make build`: build frontend packages and the Go API binary at `apps/api/bin/api`. Requires pnpm dependencies and Go.
@@ -111,7 +111,7 @@ Implemented command surface:
 - `make openapi-check`: regenerate OpenAPI and fail on committed contract drift. Requires Go and a clean expected contract.
 - `make client-generate`: generate the TypeScript API client from OpenAPI.
 - `make client-check`: regenerate the TypeScript API client and fail on committed client drift.
-- `make ci`: run lint, typecheck, tests, OpenAPI drift check, client drift check, and builds. Requires pnpm dependencies and Go.
+- `make ci`: run lint, typecheck, tests, OpenAPI drift check, client drift check, and builds. Requires pnpm dependencies and Go. Playwright E2E is run by the GitHub Actions CI workflow as a separate browser-backed step.
 - `docker compose config`: validate local compose configuration. Requires Docker Compose.
 - `docker compose build`: build local API and web images. Requires Docker.
 
