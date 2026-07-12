@@ -12,13 +12,18 @@ const apiMocks = vi.hoisted(() => ({
   getResume: vi.fn(),
   importResume: vi.fn(),
   assignUserRoleBindings: vi.fn(),
+  createRoleDefinition: vi.fn(),
   deleteUserRoleBinding: vi.fn(),
+  deleteRoleDefinition: vi.fn(),
+  getRole: vi.fn(),
   getUser: vi.fn(),
   getNotificationSummary: vi.fn(),
+  getRolePermissionOptions: vi.fn(),
   listAssignableRoles: vi.fn(),
   listDepartments: vi.fn(),
   listNotifications: vi.fn(),
   listPositions: vi.fn(),
+  listRoles: vi.fn(),
   listResumes: vi.fn(),
   listUsers: vi.fn(),
   loginWithW3: vi.fn(),
@@ -28,6 +33,8 @@ const apiMocks = vi.hoisted(() => ({
   parseResumeMatch: vi.fn(),
   routeRecommendation: vi.fn(),
   sendRecommendation: vi.fn(),
+  toggleRoleEnabled: vi.fn(),
+  updateRoleDefinition: vi.fn(),
 }));
 
 vi.mock("../api/client", () => apiMocks);
@@ -76,6 +83,13 @@ const userAdminSession = {
   defaultRoute: "/users",
   pageAccess: ["users"],
   permissions: ["User.List", "User.Get", "UserDepartmentRole.List", "UserDepartmentRole.Create", "UserDepartmentRole.Delete"],
+};
+
+const roleAdminSession = {
+  ...hrbpSession,
+  defaultRoute: "/roles",
+  pageAccess: ["roles"],
+  permissions: ["Role.List", "Role.Get", "Role.Create", "Role.Update", "Role.Delete", "Permission.List"],
 };
 
 const notificationSession = {
@@ -238,6 +252,37 @@ describe("App", () => {
       },
       error: undefined,
     });
+    apiMocks.createRoleDefinition.mockReset();
+    apiMocks.deleteRoleDefinition.mockReset();
+    apiMocks.getRole.mockReset();
+    apiMocks.getRolePermissionOptions.mockReset();
+    apiMocks.getRolePermissionOptions.mockResolvedValue({ data: { conditionOptions: {}, resources: [] }, error: undefined });
+    apiMocks.listRoles.mockReset();
+    apiMocks.listRoles.mockResolvedValue({
+      data: {
+        canCreate: true,
+        total: 1,
+        items: [
+          {
+            id: "__role_hrbp__",
+            label: "HRBP",
+            description: "部门 HRBP",
+            isSystem: true,
+            enabled: true,
+            permissionCount: 3,
+            childRoleCount: 0,
+            referenceCount: 2,
+            conditionSummary: "全部渠道",
+            canEdit: true,
+            canDelete: false,
+            canToggleEnabled: true,
+          },
+        ],
+      },
+      error: undefined,
+    });
+    apiMocks.toggleRoleEnabled.mockReset();
+    apiMocks.updateRoleDefinition.mockReset();
     apiMocks.loginWithW3.mockReset();
     apiMocks.logout.mockReset();
     window.location.hash = "";
@@ -489,6 +534,16 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "用户管理" })).toBeInTheDocument();
     expect(apiMocks.listUsers).toHaveBeenCalledWith({});
     expect(await screen.findByRole("row", { name: /张敏/ })).toBeInTheDocument();
+  });
+
+  it("renders the role management page when it is the active IAM route", async () => {
+    apiMocks.getCurrentUser.mockResolvedValue({ data: roleAdminSession, error: undefined });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "角色管理" })).toBeInTheDocument();
+    expect(apiMocks.listRoles).toHaveBeenCalledWith({});
+    expect(await screen.findByRole("row", { name: /HRBP/ })).toBeInTheDocument();
   });
 
   it("returns to the login form after logout", async () => {

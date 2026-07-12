@@ -11,6 +11,7 @@ import type { NotificationJumpContext } from "../notifications/types";
 import { ResumeLibraryPage } from "../resume-library/ResumeLibraryPage";
 import { ResumeParsePage } from "../resume-parse/ResumeParsePage";
 import { ResumeRecommendPage } from "../resume-recommend/ResumeRecommendPage";
+import { RoleManagementPage } from "../roles/RoleManagementPage";
 import { UsersPage } from "../users/UsersPage";
 import "../styles/globals.css";
 
@@ -279,6 +280,8 @@ export function App() {
           <DepartmentPositionPage session={session} />
         ) : selectedPage === "users" ? (
           <UsersPage session={session} />
+        ) : selectedPage === "roles" ? (
+          <RoleManagementPage session={session} />
         ) : (
           <h1 className="text-2xl font-semibold tracking-normal">{routeLabels[selectedPage] ?? text.nav.resumeParse}</h1>
         )}
