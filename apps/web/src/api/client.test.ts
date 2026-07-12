@@ -145,4 +145,18 @@ describe("api client", () => {
     });
     expect(del).toHaveBeenCalledWith("/positions/{positionId}", { params: { path: { positionId: "position_a" } } });
   });
+
+  it("routes and sends recommendations", async () => {
+    const post = vi.fn().mockResolvedValue({ data: undefined, error: undefined });
+    vi.doMock("@talentpilot/api-client", () => ({ createTalentPilotClient: vi.fn(() => ({ POST: post })) }));
+
+    const { routeRecommendation, sendRecommendation } = await import("./client");
+    await routeRecommendation({ resumeId: "resume_1" });
+    await sendRecommendation({ resumeId: "resume_1", departmentId: "dept_a", positionId: "position_a" });
+
+    expect(post).toHaveBeenCalledWith("/recommendations/route", { body: { resumeId: "resume_1" } });
+    expect(post).toHaveBeenCalledWith("/recommendations/send", {
+      body: { resumeId: "resume_1", departmentId: "dept_a", positionId: "position_a" },
+    });
+  });
 });

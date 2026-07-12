@@ -100,6 +100,14 @@ export function deletePosition(positionId: string) {
   return apiClient.DELETE("/positions/{positionId}", { params: { path: { positionId } } });
 }
 
+export function routeRecommendation(body: { resumeId: string }) {
+  return apiClient.POST("/recommendations/route", { body });
+}
+
+export function sendRecommendation(body: { resumeId: string; departmentId: string; positionId: string }) {
+  return apiClient.POST("/recommendations/send", { body });
+}
+
 export async function loginWithW3(account: string, password: string) {
   await apiClient.GET("/auth/csrf");
 
