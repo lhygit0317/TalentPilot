@@ -26,8 +26,8 @@ export const enUS = {
       resumeLibrary: "Resume library",
       resumeParse: "Resume parsing",
       resumeRecommend: "Resume recommendation",
-      roles: "Roles and permissions",
-      users: "Users",
+      roles: "Role management",
+      users: "User management",
     },
     workspace: {
       allDepartments: "All departments",

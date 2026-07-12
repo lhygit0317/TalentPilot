@@ -26,8 +26,8 @@ export const zhCN = {
       resumeLibrary: "简历库",
       resumeParse: "简历解析",
       resumeRecommend: "简历推荐",
-      roles: "角色权限",
-      users: "用户",
+      roles: "角色管理",
+      users: "用户管理",
     },
     workspace: {
       allDepartments: "全部部门",
