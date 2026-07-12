@@ -17,6 +17,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/organization"
 	"github.com/talentpilot/talentpilot/apps/api/internal/recommendation"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
+	"github.com/talentpilot/talentpilot/apps/api/internal/roleadmin"
 	"github.com/talentpilot/talentpilot/apps/api/internal/useradmin"
 )
 
@@ -37,6 +38,7 @@ type Options struct {
 	MatchingService       MatchingService
 	RecommendationService RecommendationService
 	UserAdminService      UserAdminService
+	RoleAdminService      RoleAdminService
 	NotificationService   NotificationService
 }
 
@@ -94,6 +96,16 @@ type UserAdminService interface {
 	DeleteRoleBinding(context.Context, useradmin.DeleteRoleBindingInput) (useradmin.DeleteRoleBindingResult, error)
 }
 
+type RoleAdminService interface {
+	ListRoles(context.Context, roleadmin.RoleListQuery) (roleadmin.RoleListResult, error)
+	GetRole(context.Context, string, roleadmin.RoleCapabilityQuery) (roleadmin.RoleDetail, error)
+	PermissionOptions(context.Context) (roleadmin.PermissionOptionsResult, error)
+	CreateRole(context.Context, roleadmin.RoleDefinitionInput) (roleadmin.RoleDetail, error)
+	UpdateRole(context.Context, string, roleadmin.RoleDefinitionInput) (roleadmin.RoleDetail, error)
+	ToggleEnabled(context.Context, string, roleadmin.ToggleEnabledInput) (roleadmin.RoleDetail, error)
+	DeleteRole(context.Context, string, string) error
+}
+
 type NotificationService interface {
 	Summary(context.Context, string) (notification.SummaryResult, error)
 	ListUnread(context.Context, notification.ListQuery) (notification.ListResult, error)
@@ -132,6 +144,7 @@ func NewServerWithOptions(options Options) *Server {
 	registerMatchingRoutes(api, options)
 	registerRecommendationRoutes(api, options)
 	registerUserAdminRoutes(api, options)
+	registerRoleAdminRoutes(api, options)
 	registerNotificationRoutes(api, options)
 
 	return &Server{Echo: e, API: api}

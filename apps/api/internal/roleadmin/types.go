@@ -84,17 +84,17 @@ type PermissionInput struct {
 }
 
 type RoleDefinitionInput struct {
-	ActorUserID  string
+	ActorUserID  string            `json:"-"`
 	Label        string            `json:"label"`
-	Description  string            `json:"description"`
+	Description  string            `json:"description,omitempty"`
 	Enabled      bool              `json:"enabled"`
 	Permissions  []PermissionInput `json:"permissions" nullable:"false"`
 	ChildRoleIDs []string          `json:"childRoleIds" nullable:"false"`
 }
 
 type ToggleEnabledInput struct {
-	ActorUserID string
-	Enabled     bool `json:"enabled"`
+	ActorUserID string `json:"-"`
+	Enabled     bool   `json:"enabled"`
 }
 
 type RoleRecord struct {
