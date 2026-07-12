@@ -78,6 +78,147 @@ const positionListResponse = {
   ],
 };
 
+const departmentListResponse = {
+  items: [
+    {
+      id: "dept_a",
+      name: "算力训练平台部",
+      positionCount: 1,
+      resumeCount: 2,
+      updatedAt: "2026-07-12T08:00:00Z",
+      canGet: true,
+      canUpdate: true,
+      canDelete: false,
+    },
+    {
+      id: "dept_b",
+      name: "智算调度部",
+      positionCount: 1,
+      resumeCount: 0,
+      updatedAt: "2026-07-12T08:00:00Z",
+      canGet: true,
+      canUpdate: true,
+      canDelete: false,
+    },
+  ],
+};
+
+const userListResponse = {
+  canAssignRoles: true,
+  dataScopeSummary: "全部部门",
+  items: [
+    {
+      id: "user_a",
+      employeeId: "A10001",
+      name: "张敏",
+      departments: [{ id: "dept_a", name: "算力训练平台部", system: false }],
+      roleBindings: [
+        {
+          id: "udr_a",
+          role: { id: "__role_hrbp__", label: "HRBP", isSystem: true, enabled: true },
+          department: { id: "dept_a", name: "算力训练平台部", system: false },
+          guest: false,
+          createdAt: "2026-07-12T08:00:00Z",
+          createdBy: "admin",
+          canDelete: true,
+        },
+      ],
+      roleSummary: "HRBP(部门:算力训练平台部)",
+      guestOnly: false,
+      canAssign: true,
+    },
+  ],
+  nextCursor: "",
+};
+
+const managerBinding = {
+  id: "udr_manager",
+  role: { id: "__role_manager__", label: "主管", isSystem: true, enabled: true },
+  department: { id: "dept_b", name: "智算调度部", system: false },
+  guest: false,
+  createdAt: "2026-07-12T08:01:00Z",
+  createdBy: "admin",
+  canDelete: false,
+};
+
+function userListFixture({
+  hrbpBindingPresent,
+  managerBindingPresent,
+}: {
+  hrbpBindingPresent: boolean;
+  managerBindingPresent: boolean;
+}) {
+  const user = userListResponse.items[0];
+  const roleBindings = [
+    ...(hrbpBindingPresent ? user.roleBindings : []),
+    ...(managerBindingPresent ? [managerBinding] : []),
+  ];
+  return {
+    ...userListResponse,
+    items: [
+      {
+        ...user,
+        roleBindings,
+        roleSummary: roleBindings
+          .map((binding) => `${binding.role.label}(部门:${binding.department.name})`)
+          .join("、"),
+      },
+    ],
+  };
+}
+
+const assignableRolesResponse = {
+  items: [
+    {
+      id: "__role_hrbp__",
+      label: "HRBP",
+      description: "部门 HRBP",
+      isSystem: true,
+      supportsSystemDepartment: false,
+      attributeConditionSummary: "",
+    },
+    {
+      id: "__role_manager__",
+      label: "主管",
+      description: "业务主管",
+      isSystem: true,
+      supportsSystemDepartment: false,
+      attributeConditionSummary: "",
+    },
+  ],
+};
+
+const roleListResponse = {
+  canCreate: true,
+  total: 1,
+  items: [
+    {
+      id: "__role_hrbp__",
+      label: "HRBP",
+      description: "部门 HRBP",
+      isSystem: true,
+      enabled: true,
+      permissionCount: 3,
+      childRoleCount: 0,
+      referenceCount: 2,
+      conditionSummary: "全部渠道",
+      canEdit: true,
+      canDelete: false,
+      canToggleEnabled: true,
+    },
+  ],
+};
+
+const rolePermissionOptionsResponse = {
+  conditionOptions: { chan: ["social", "campus"], expired: [false, true] },
+  resources: [
+    {
+      resource: "Resume",
+      actions: [{ action: "List", supportsConditions: { chan: true, expired: true, self: false } }],
+    },
+  ],
+};
+
 const notification = {
   id: "notification_1",
   resumeId: "resume_copy",
@@ -93,6 +234,9 @@ const notification = {
 export async function installApiMocks(page: Page) {
   let unreadCount = 2;
   let notificationUnread = true;
+  let customReviewerCreated = false;
+  let hrbpBindingPresent = true;
+  let managerBindingPresent = false;
 
   await page.route("**/*", async (route) => {
     const url = new URL(route.request().url());
@@ -108,6 +252,105 @@ export async function installApiMocks(page: Page) {
     }
     if (url.pathname === "/positions" && method === "GET") {
       return json(route, positionListResponse);
+    }
+    if (url.pathname === "/users" && method === "GET") {
+      return json(route, userListFixture({ hrbpBindingPresent, managerBindingPresent }));
+    }
+    if (url.pathname === "/departments" && method === "GET") {
+      return json(route, departmentListResponse);
+    }
+    if (url.pathname === "/roles/assignable" && method === "GET") {
+      return json(route, assignableRolesResponse);
+    }
+    if (url.pathname === "/users/user_a/role-bindings" && method === "POST") {
+      if (
+        !(await validateJsonBody(route, {
+          bindings: [{ departmentId: "dept_b", roleId: "__role_manager__" }],
+        }))
+      ) {
+        return;
+      }
+      managerBindingPresent = true;
+      return json(route, {
+        message: "已为 张敏 分配 1 个角色绑定",
+        created: [managerBinding],
+        user: { id: "user_a", employeeId: "A10001", name: "张敏" },
+      });
+    }
+    if (url.pathname === "/users/user_a/role-bindings/udr_a" && method === "DELETE") {
+      hrbpBindingPresent = false;
+      return json(route, {
+        deletedBindingId: "udr_a",
+        userId: "user_a",
+        message: "已解除 HRBP(部门:算力训练平台部)",
+      });
+    }
+    if (url.pathname === "/roles" && method === "GET") {
+      return json(route, {
+        ...roleListResponse,
+        items: customReviewerCreated
+          ? [
+              ...roleListResponse.items,
+              {
+                id: "role_custom_reviewer",
+                label: "高级评审者",
+                description: "查看社招简历",
+                isSystem: false,
+                enabled: true,
+                permissionCount: 1,
+                childRoleCount: 0,
+                referenceCount: 0,
+                conditionSummary: "社招",
+                canEdit: true,
+                canDelete: true,
+                canToggleEnabled: true,
+              },
+            ]
+          : roleListResponse.items,
+        total: customReviewerCreated ? 2 : 1,
+      });
+    }
+    if (url.pathname === "/roles/permission-options" && method === "GET") {
+      return json(route, rolePermissionOptionsResponse);
+    }
+    if (url.pathname === "/roles" && method === "POST") {
+      const body = await readJsonBody(route);
+      if (!body) {
+        return;
+      }
+      if (body.label === "循环角色") {
+        if (
+          !(await validateJsonBody(route, {
+            label: "循环角色",
+            description: "",
+            enabled: true,
+            permissions: [],
+            childRoleIds: ["__role_hrbp__"],
+          }))
+        ) {
+          return;
+        }
+        return json(route, { code: "IAM_ROLE_RELATION_CYCLE", message: "角色包含关系不能形成循环。" }, 400);
+      }
+      if (
+        !(await validateJsonBody(route, {
+          label: "高级评审者",
+          description: "查看社招简历",
+          enabled: true,
+          permissions: [
+            {
+              resource: "Resume",
+              action: "List",
+              attributeConditions: { chan: ["social"] },
+            },
+          ],
+          childRoleIds: [],
+        }))
+      ) {
+        return;
+      }
+      customReviewerCreated = true;
+      return json(route, { id: "role_custom_reviewer", label: "高级评审者" });
     }
     if (url.pathname === "/matching/parse" && method === "POST") {
       if (!(await validateJsonBody(route, { resumeId: "resume_1", positionId: "position_1" }))) {
@@ -235,6 +478,20 @@ export async function installApiMocks(page: Page) {
     }
     return route.fallback();
   });
+}
+
+async function readJsonBody(route: Route): Promise<Record<string, unknown> | undefined> {
+  try {
+    const body = route.request().postDataJSON();
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      await json(route, { code: "E2E_FIXTURE_INVALID_JSON", message: "Expected a JSON object request body." }, 400);
+      return undefined;
+    }
+    return body as Record<string, unknown>;
+  } catch {
+    await json(route, { code: "E2E_FIXTURE_INVALID_JSON", message: "Expected a JSON request body." }, 400);
+    return undefined;
+  }
 }
 
 async function validateJsonBody(route: Route, expected: unknown) {
