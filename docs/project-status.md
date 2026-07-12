@@ -54,12 +54,12 @@ This file is the live checklist for foundation work and PRD delivery. Update it 
 
 | Area | Item | Status | Evidence | Next |
 | --- | --- | --- | --- | --- |
-| Frontend | Component rule enforcement | In Progress | `docs/specs/010-quality-hardening.md` defines the hardening target for automated raw interactive element checks. Existing convention is documented in `AGENTS.md` and `docs/specs/000-foundation-architecture.md`. | Write the failing lint/check fixture, then add the smallest enforcement implementation and wire it into `make lint`. |
-| Testing | Playwright E2E smoke coverage | Not Started | `make test-e2e` exists but remains reserved; Playwright dependency/config is not installed yet. `docs/specs/010-quality-hardening.md` defines initial smoke coverage. | Add Playwright setup with a failing smoke test first, then make `make test-e2e` meaningful. |
+| Frontend | Component rule enforcement | In Progress | `docs/specs/010-quality-hardening.md` defines the hardening target; `docs/superpowers/plans/2026-07-12-quality-hardening-implementation.md` defines the implementation steps for automated raw interactive element checks. Existing convention is documented in `AGENTS.md` and `docs/specs/000-foundation-architecture.md`. | Execute the implementation plan starting with the failing checker fixture. |
+| Testing | Playwright E2E smoke coverage | Not Started | `make test-e2e` exists but remains reserved; Playwright dependency/config is not installed yet. `docs/specs/010-quality-hardening.md` and `docs/superpowers/plans/2026-07-12-quality-hardening-implementation.md` define initial smoke coverage. | Execute the Playwright setup tasks after component-rule enforcement. |
 
 ## Current Recommended Order
 
-1. Complete `docs/specs/010-quality-hardening.md` review.
+1. Review `docs/superpowers/plans/2026-07-12-quality-hardening-implementation.md`.
 2. Implement component-rule enforcement before broad E2E expansion.
 3. Install and configure Playwright so `make test-e2e` becomes a meaningful smoke gate.
 4. Keep future notification expansion available unless product priority changes.
