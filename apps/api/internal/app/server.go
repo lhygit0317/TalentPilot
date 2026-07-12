@@ -12,6 +12,7 @@ import (
 	"github.com/talentpilot/talentpilot/apps/api/internal/auth"
 	"github.com/talentpilot/talentpilot/apps/api/internal/http/apperror"
 	"github.com/talentpilot/talentpilot/apps/api/internal/iam"
+	"github.com/talentpilot/talentpilot/apps/api/internal/matching"
 	"github.com/talentpilot/talentpilot/apps/api/internal/organization"
 	"github.com/talentpilot/talentpilot/apps/api/internal/resume"
 )
@@ -30,6 +31,7 @@ type Options struct {
 	IAMService          IAMService
 	ResumeService       ResumeService
 	OrganizationService OrganizationService
+	MatchingService     MatchingService
 }
 
 type AuthService interface {
@@ -68,6 +70,11 @@ type OrganizationService interface {
 	DeletePosition(context.Context, string, iam.ScopePredicate, string) error
 }
 
+type MatchingService interface {
+	Parse(context.Context, matching.ParseInput) (matching.ParseResult, error)
+	GenerateInterviewQuestions(context.Context, matching.InterviewQuestionInput) (matching.InterviewQuestionResult, error)
+}
+
 type healthOutput struct {
 	Body struct {
 		Status string `json:"status" example:"ok"`
@@ -96,6 +103,7 @@ func NewServerWithOptions(options Options) *Server {
 	registerAuthRoutes(api, options)
 	registerResumeRoutes(api, options)
 	registerOrganizationRoutes(api, options)
+	registerMatchingRoutes(api, options)
 
 	return &Server{Echo: e, API: api}
 }

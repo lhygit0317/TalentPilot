@@ -32,6 +32,14 @@ export function getJob(jobId: string) {
   return apiClient.GET("/jobs/{jobId}", { params: { path: { jobId } } });
 }
 
+export function parseResumeMatch(body: { resumeId: string; positionId: string }) {
+  return apiClient.POST("/matching/parse", { body });
+}
+
+export function generateInterviewQuestions(body: { resumeId: string; positionId: string; matchScore?: number }) {
+  return apiClient.POST("/matching/interview-questions", { body });
+}
+
 export function listDepartments(query: { search?: string; limit?: number } = {}) {
   return apiClient.GET("/departments", { params: { query } });
 }

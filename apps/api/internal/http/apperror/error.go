@@ -52,6 +52,9 @@ const (
 	PositionDuplicateImplicitTag         Code = "POSITION_DUPLICATE_IMPLICIT_TAG"
 	PositionInvalidImplicitWeight        Code = "POSITION_INVALID_IMPLICIT_WEIGHT"
 	PositionDeleteHasHistory             Code = "POSITION_DELETE_HAS_HISTORY"
+	MatchingPositionOffline              Code = "MATCHING_POSITION_OFFLINE"
+	MatchingParseFailed                  Code = "MATCHING_PARSE_FAILED"
+	MatchingInterviewFailed              Code = "MATCHING_INTERVIEW_FAILED"
 	ValidationFailed                     Code = "VALIDATION_FAILED"
 	Internal                             Code = "INTERNAL_ERROR"
 )
@@ -154,7 +157,7 @@ func statusForCode(code Code) int {
 		return http.StatusForbidden
 	case IAMPermissionNotFound, IAMPrincipalNotFound, ResumeNotFound, JobNotFound, DepartmentNotFound, PositionNotFound:
 		return http.StatusNotFound
-	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory:
+	case ValidationFailed, IAMInvalidResource, IAMInvalidAction, IAMInvalidAttributeCondition, IAMRoleRelationCycle, IAMRoleRelationDepthExceeded, IAMScopeUnsupported, ResumeImportFileTooLarge, ResumeImportUnsupportedType, ResumeImportTargetDepartmentRequired, ResumeImportTargetDepartmentInvalid, ResumeImportParseFailed, ResumeImportEmptyFile, DepartmentNameRequired, DepartmentNameDuplicate, DepartmentDeleteHasRelations, DepartmentSystemProtected, PositionNameRequired, PositionDepartmentRequired, PositionDepartmentInvalid, PositionInvalidChannel, PositionInvalidStatus, PositionDuplicateKeyword, PositionDuplicateImplicitTag, PositionInvalidImplicitWeight, PositionDeleteHasHistory, MatchingPositionOffline, MatchingParseFailed, MatchingInterviewFailed:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -249,6 +252,12 @@ func defaultMessage(code Code) string {
 		return "隐性标签权重不合法"
 	case PositionDeleteHasHistory:
 		return "岗位已有解析或推荐历史，请使用下架"
+	case MatchingPositionOffline:
+		return "岗位已下架，不能参与解析"
+	case MatchingParseFailed:
+		return "简历解析失败，请稍后重试"
+	case MatchingInterviewFailed:
+		return "面试题生成失败，请稍后重试"
 	case ValidationFailed:
 		return "请求参数不合法"
 	default:

@@ -115,6 +115,69 @@ export const enUS = {
     },
     unknownSource: "Unknown source",
   },
+  resumeParse: {
+    actions: {
+      generateQuestions: "Generate interview questions",
+      parse: "Start parsing",
+      parsing: "Thinking...",
+    },
+    channelNavLabel: "Parse channel",
+    empty: {
+      positions: "Maintain positions in Departments and positions first",
+      resumes: "No selectable resumes in this channel. Import one.",
+    },
+    emptyValue: "Not parsed",
+    errors: {
+      codes: {
+        IAM_PERMISSION_DENIED: "You do not have permission to perform this action.",
+        JOB_ACCESS_DENIED: "You cannot view this import job.",
+        MATCHING_INTERVIEW_FAILED: "Failed to generate interview questions. Try again later.",
+        MATCHING_PARSE_FAILED: "Resume parsing failed. Try again later.",
+        MATCHING_POSITION_OFFLINE: "This position is off-shelf and cannot be parsed.",
+        RESUME_IMPORT_FAILED: "Failed to import the resume. Try again later.",
+        RESUME_IMPORT_PARSE_FAILED: "Resume parsing failed. Upload the PDF again.",
+      },
+      fileTooLarge: "File must be 10MB or smaller",
+      generic: "Operation failed. Try again later.",
+      list: "Failed to load resumes. Try again later.",
+      positions: "Failed to load positions. Try again later.",
+      targetDepartmentRequired: "Select an import target department",
+      unsupportedType: "Only PDF files are supported",
+    },
+    position: {
+      label: "Target JD",
+    },
+    questions: {
+      thinking: "Thinking...",
+      tabs: {
+        manager: "Manager",
+        professional: "Professional",
+        qualification: "Qualification",
+      },
+    },
+    result: {
+      empty: "Parse results will appear here after selecting/importing a resume and choosing a position.",
+      experience: "Experience match",
+      implicit: "Implicit requirements",
+      implicitTags: "Implicit tag evidence",
+      keywords: "Keyword evidence",
+      skill: "Skill match",
+      thinking: "Thinking...",
+    },
+    selectedResume: (name: string) => `Selected: ${name}`,
+    source: {
+      library: "Choose from library",
+      upload: "Import new resume",
+    },
+    subtitle: "Select a candidate and active JD to generate reviewable matching evidence.",
+    title: "Resume parsing",
+    toasts: {
+      singleImported: (name: string) => `✓ Imported "${name}" into the resume library`,
+    },
+    upload: {
+      label: "Upload resume",
+    },
+  },
   departmentPosition: {
     actions: {
       cancel: "Cancel",

@@ -126,6 +126,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/matching/interview-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate interview questions */
+        post: operations["post-matching-interview-questions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/matching/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parse resume against a position */
+        post: operations["post-matching-parse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -329,6 +363,15 @@ export interface components {
             /** Format: double */
             yearsExp?: number;
         };
+        Evidence: {
+            analysis: string;
+            implicitTags: components["schemas"]["WeightedEvidenceItem"][];
+            keywords: components["schemas"]["EvidenceItem"][];
+        };
+        EvidenceItem: {
+            matched: boolean;
+            name: string;
+        };
         FormFile: {
             ContentType: string;
             Filename: string;
@@ -349,6 +392,21 @@ export interface components {
             name: string;
             /** Format: int64 */
             w?: number;
+        };
+        InterviewQuestion: {
+            difficulty: string;
+            /** Format: int64 */
+            order: number;
+            question: string;
+            why: string;
+        };
+        InterviewQuestionGroup: {
+            label: string;
+            questions: components["schemas"]["InterviewQuestion"][];
+            type: string;
+        };
+        InterviewQuestionResult: {
+            groups: components["schemas"]["InterviewQuestionGroup"][];
         };
         JobResult: {
             errorCode?: string;
@@ -402,6 +460,34 @@ export interface components {
             account: string;
             password: string;
         };
+        MatchingDepartmentSummary: {
+            id: string;
+            name: string;
+        };
+        MatchingImplicitTag: {
+            name: string;
+            /** Format: int64 */
+            w: number;
+        };
+        MatchingInterviewBody: {
+            /** Format: int64 */
+            matchScore?: number;
+            positionId: string;
+            resumeId: string;
+        };
+        MatchingParseBody: {
+            positionId: string;
+            resumeId: string;
+        };
+        ParseResult: {
+            /** Format: date-time */
+            createdAt: string;
+            evidence: components["schemas"]["Evidence"];
+            id: string;
+            position: components["schemas"]["PositionContext"];
+            resume: components["schemas"]["ResumeContext"];
+            score: components["schemas"]["Score"];
+        };
         PositionBody: {
             /** @enum {string} */
             chan: "social" | "campus";
@@ -414,6 +500,16 @@ export interface components {
             name: string;
             /** @enum {string} */
             status: "on" | "off";
+        };
+        PositionContext: {
+            chan: string;
+            department: components["schemas"]["MatchingDepartmentSummary"];
+            id: string;
+            implicitTags: components["schemas"]["MatchingImplicitTag"][];
+            keywords: string[];
+            level: string;
+            name: string;
+            status: string;
         };
         PositionDepartmentSummary: {
             id: string;
@@ -492,15 +588,45 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        ResumeContext: {
+            chan: string;
+            currentDepartment: components["schemas"]["MatchingDepartmentSummary"];
+            /** Format: int64 */
+            expBase: number;
+            id: string;
+            keywords: string[];
+            name: string;
+            pos: string;
+            source: string;
+            sourceBy: string;
+            traits: string[];
+        };
         RoleBinding: {
             departmentId: string;
             departmentName: string;
             roleLabel: string;
         };
+        Score: {
+            /** Format: int64 */
+            experience: number;
+            /** Format: int64 */
+            implicit: number;
+            judgement: string;
+            /** Format: int64 */
+            skill: number;
+            /** Format: int64 */
+            total: number;
+        };
         UserSummary: {
             employeeId: string;
             id: string;
             name: string;
+        };
+        WeightedEvidenceItem: {
+            matched: boolean;
+            name: string;
+            /** Format: int64 */
+            w: number;
         };
     };
     responses: never;
@@ -1037,6 +1163,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStatus"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "post-matching-interview-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatchingInterviewBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewQuestionResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "post-matching-parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatchingParseBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseResult"];
                 };
             };
             /** @description Unauthorized */
