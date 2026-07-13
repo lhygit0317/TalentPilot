@@ -1,4 +1,5 @@
 .worktrees/
+.codex-work/
 .DS_Store
 .env
 .env.local
